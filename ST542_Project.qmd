@@ -13,6 +13,85 @@ Add up subgroups to create one column per variable.
 ```{r}
 # Load libraries
 library(tidyverse)
+library(readxl)
 ```
 
-## 
+```{r}
+french_post_survey <- read_excel("French_Post_Survey.xlsx",sheet=1,
+                      col_names = c("Timestamp", "Email", "Changed_Major",
+                                   "Changed_Minor", "Masters", "Feelings",
+                                   "Feelings_Factors", "Class_Level", 
+                                   "Living_Arrangement", "LA_a1",
+                                   "LA_a2", "LA_a3", "LA_a4", "LA_b1", "LA_b2",
+                                   "LA_b3", "Groupness1", "Groupness2", 
+                                   "Groupness3", "Groupness4", "Groupness5",
+                                   "Phone_Language", "Phone_Keyboard",
+                                   "Screen_Time", "Interact1", "Interact2",
+                                   "Interact3", "Interact4", "Interact5",
+                                   "Interact6", "Interact7", "Interact8",
+                                   "Interact9", "Interact10", "Speak1",
+                                   "Speak2", "Speak3", "Speak4", "Speak5",
+                                   "Speak_Hours1", "Speak_Hours2",
+                                   "Speak_Hours3", "Speak_Hours4", 
+                                   "Speak_Hours5", "Use_French1", "Use_French2",
+                                   "Use_French3", "Use_French4", 
+                                   "French_Hours1", "French_Hours2", 
+                                   "French_Hours3", "French_Hours4",
+                                   "Read_French1", "Read_French2", 
+                                   "Read_French3", "Read_French4", 
+                                   "Read_French5", "Write_French1",
+                                   "Write_French2", "Write_French3",
+                                   "Write_French4", "Write_French5",
+                                   "Listen_French1", "Listen_French2",
+                                   "Listen_French3", "Listen_French4",
+                                   "Listen_French5", "Speak_French1",
+                                   "Speak_French2", "Speak_French3", 
+                                   "Speak_French4", "Speak_French5",
+                                   "Continue_French1", "Continue_French2",
+                                   "Continue_French3", "Continue_French4",
+                                   "Continue_French5", "Code", "Extra1", 
+                                   "Extra2", "Extra3"),
+                      skip = 1)
+
+# The last 9 values were from extra work, not survey responses
+french_post_survey <- french_post_survey[1:61,]
+french_post_survey
+```
+
+```{r}
+french_post_survey |>
+  group_by(Speak_French5) |>
+  summarize(count = n())
+```
+
+This is typical ordinal categorical data. Need to convert it to a 1 to 5 scale using:
+
+-   1 : Not sure
+
+-   2 : Somewhat sure
+
+-   3 : Moderately sure
+
+-   4 : Very sure
+
+-   5 : Completely sure
+
+Which columns can be converted using this format? All of the response variables.
+
+-   "Read_French1", "Read_French2", "Read_French3", "Read_French4", "Read_French5", "Write_French1", "Write_French2", "Write_French3", "Write_French4", "Write_French5", "Listen_French1", "Listen_French2", "Listen_French3", "Listen_French4", "Listen_French5", "Speak_French1", "Speak_French2", "Speak_French3", "Speak_French4", "Speak_French5", "Continue_French1", "Continue_French2", "Continue_French3", "Continue_French4", "Continue_French5"
+
+```{r}
+# To convert ordinal categorical values to numbers
+ordinal_dict <- c("Not sure" = 1,
+                  "Somewhat sure" = 2,
+                  "Moderately sure" = 3,
+                  "Very sure" = 4, 
+                  "Completely sure" = 5)
+```
+
+```{r}
+# How to convert ordinal categorical data to numerical
+french_post_survey |>
+  select(Speak_French5) |>
+  mutate(Speak_French5 = ordinal_dict[Speak_French5])
+```
