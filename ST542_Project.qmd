@@ -1,0 +1,18 @@
+---
+title: "ST542 French Immersion Project"
+format: pdf
+editor: visual
+---
+
+## Data Preprocessing
+
+Convert ordinal categorical data to numbers.
+
+Add up subgroups to create one column per variable.
+
+```{r}
+# Load libraries
+library(tidyverse)
+```
+
+## 
