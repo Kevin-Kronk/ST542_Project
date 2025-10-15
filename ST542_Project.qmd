@@ -58,27 +58,17 @@ french_post_survey <- french_post_survey[1:61,]
 french_post_survey
 ```
 
+### Response Variables
+
+Reading, Writing, Listening, and Speaking French Perceived Skill. Intention to continue learning French in some capacity.
+
 ```{r}
 french_post_survey |>
   group_by(Speak_French5) |>
   summarize(count = n())
 ```
 
-This is typical ordinal categorical data. Need to convert it to a 1 to 5 scale using:
-
--   1 : Not sure
-
--   2 : Somewhat sure
-
--   3 : Moderately sure
-
--   4 : Very sure
-
--   5 : Completely sure
-
-Which columns can be converted using this format? All of the response variables.
-
--   "Read_French1", "Read_French2", "Read_French3", "Read_French4", "Read_French5", "Write_French1", "Write_French2", "Write_French3", "Write_French4", "Write_French5", "Listen_French1", "Listen_French2", "Listen_French3", "Listen_French4", "Listen_French5", "Speak_French1", "Speak_French2", "Speak_French3", "Speak_French4", "Speak_French5", "Continue_French1", "Continue_French2", "Continue_French3", "Continue_French4", "Continue_French5"
+This is typical ordinal categorical data. Need to convert it to a 1 to 5 scale.
 
 ```{r}
 # To convert ordinal categorical values to numbers
@@ -87,11 +77,150 @@ ordinal_dict <- c("Not sure" = 1,
                   "Moderately sure" = 3,
                   "Very sure" = 4, 
                   "Completely sure" = 5)
+
+ordinal_columns <- c("Read_French1", "Read_French2", "Read_French3",
+                     "Read_French4", "Read_French5", "Write_French1",
+                     "Write_French2", "Write_French3", "Write_French4",
+                     "Write_French5", "Listen_French1", "Listen_French2",
+                     "Listen_French3", "Listen_French4", "Listen_French5",
+                     "Speak_French1", "Speak_French2", "Speak_French3",
+                     "Speak_French4", "Speak_French5", "Continue_French1",
+                     "Continue_French2", "Continue_French3", "Continue_French4",
+                     "Continue_French5")
+
+convert_ordinal <- function(col) {
+  return(ordinal_dict[col])
+}
 ```
 
 ```{r}
 # How to convert ordinal categorical data to numerical
-french_post_survey |>
-  select(Speak_French5) |>
-  mutate(Speak_French5 = ordinal_dict[Speak_French5])
+french_post_survey <- french_post_survey |>
+  mutate(across(all_of(ordinal_columns), convert_ordinal))
+
+french_post_survey
 ```
+
+### Hours Speaking or Using French
+
+```{r}
+# Lets look at another type of ordinal column
+french_post_survey |>
+  group_by(French_Hours4) |>
+  summarize(count = n())
+```
+
+```{r}
+# To convert ordinal categorical values to numbers
+ordinal_hours_dict <- c("0-1" = 0,
+                        "1-2" = 1,
+                        "2-3" = 2,
+                        "3-4" = 3, 
+                        "4-5" = 4,
+                        "5+" = 5)
+
+ordinal_hours_columns <- c("Speak_Hours1", "Speak_Hours2","Speak_Hours3",
+                           "Speak_Hours4", "Speak_Hours5", "French_Hours1",
+                           "French_Hours2", "French_Hours3", "French_Hours4")
+
+convert_ordinal_hours <- function(col) {
+  return(ordinal_hours_dict[col])
+}
+```
+
+```{r}
+# How to convert ordinal categorical data to numerical
+french_post_survey <- french_post_survey |>
+  mutate(across(all_of(ordinal_hours_columns), convert_ordinal_hours))
+
+french_post_survey
+```
+
+### Interaction With French People Frequency
+
+```{r}
+# Lets look at another type of ordinal column
+interact<- french_post_survey |>
+  group_by(Interact10) |>
+  summarize(count = n())
+
+interact$Interact10
+```
+
+```{r}
+# To convert ordinal categorical values to numbers
+ordinal_interact_dict <- c("not available" = 1,
+                           "never" = 2,
+                           "rarely (<1 times/week)" = 3,
+                           "occasionally (1-2 times/week)" = 4, 
+                           "frequently (3-5 times/week)" = 5)
+
+ordinal_interact_columns <- c("Interact1", "Interact2", "Interact3", 
+                              "Interact4", "Interact5", "Interact6",
+                              "Interact7", "Interact8", "Interact9",
+                              "Interact10")
+
+convert_ordinal_interact <- function(col) {
+  return(ordinal_interact_dict[col])
+}
+```
+
+```{r}
+# How to convert ordinal categorical data to numerical
+french_post_survey <- french_post_survey |>
+  mutate(across(all_of(ordinal_interact_columns), convert_ordinal_interact))
+
+french_post_survey
+```
+
+### Screen Time Will Need Some Extra Work
+
+"Screen_Time" Possibly just manual labor.
+
+### Language on Phone and Keyboard Language on Phone
+
+"Phone_Language", "Phone_Keyboard" We may or may not use these.
+
+### Groupness 
+
+"Groupness1", "Groupness2", "Groupness3", "Groupness4", "Groupness5"
+
+We are not researching this.
+
+### Living Arrangements
+
+"Living_Arrangement" Has it's own encoding.
+
+"LA_a1" may not use - Doesn't have a consistent entry.
+
+"LA_a2", "LA_a3", "LA_a4", "LA_b1", "LA_b2", "LA_b3" All yes or no.
+
+### Class Level
+
+"Class_Level" Need to make sure we know which is the highest.
+
+### Feelings and Reason for Feelings
+
+"Feelings", "Feelings_Factors" No consistent format, can't use.
+
+### Major and Minor
+
+"Changed_Major", "Changed_Minor", "Masters" No consistent format, not relevant.
+
+### Email
+
+"Email" Not relevant, only have entries for the first year.
+
+### Year
+
+"Timestamp" Need to convert to just the year.
+
+### Code
+
+"Code" Only have entries for second and third year, not all match.
+
+Technically we could have done some before and after analysis on just 2024 and 2025 where these codes matched, but we would have lost about half of the total data.
+
+### Extra
+
+"Extra1", "Extra2", "Extra3" These were just extra from I believe Dr. Call trying to figure out whose code belonged to who.
