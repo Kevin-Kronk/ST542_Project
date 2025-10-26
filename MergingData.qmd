@@ -1,0 +1,51 @@
+---
+title: "ScreenTime"
+format: html
+editor: visual
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+```
+
+#read in French post survey data first
+```{r}
+ScreenTimeImport <- read_excel("ScreenTimeDat.xlsx") 
+
+ScreenTimeDat <- ScreenTimeImport[,c(9,80:84)]
+```
+
+# merging the two data files
+```{r}
+Merged <- cbind(french_post_survey, ScreenTimeDat)
+```
+
+ 
+# Subsetting into only variables we need, excluding Screen Time
+```{r}
+WorkingData <- Merged |>
+  mutate(Interact_Tot = rowSums(across(25:34)), Speak_Tot = rowSums(across(35:39)), UseFrench_Tot = rowSums(across(45:48)), ImmersionScore = Interact_Tot+Speak_Tot+UseFrench_Tot, L_Home = if_else(startsWith(Living_Arrangement,"a"),1,0), L_Dorm = if_else(startsWith(Living_Arrangement,"b"),1,0), L_Alone = if_else(startsWith(Living_Arrangement,"c"),1,0), L_Roommates = if_else(startsWith(Living_Arrangement,"e"),1,0), CompetenceScore = rowSums(across(53:72)), IntentionScore = rowSums(across(73:77)), across(11:16, ~ if_else(. == "Yes", 1, 0)))
+FullData <- WorkingData |> select(c(2,11:16,82,88:97)) 
+```
+
+# Dataset subset #2 that contains the ScreenTime Variable
+```{r}
+WorkingSTData <-  WorkingData |> select(c(2,11:16,82,87:97)) |> drop_na(9)
+WorkingSTData
+```
+
+
+#EDA
+## Graphs of variables
+```{r}
+ggplot(FullData, aes(x = factor(L_Home), y = CompetenceScore, fill = factor(ClassLvlAbbr))) +
+  geom_bar(stat = "identity") +
+  labs(x = "Lived in a French Speaking Home (0 = No, 1 = Yes)", y = "Total Competence Score")
+```
+
+```{r}
+ggplot(FullData, aes(x = ImmersionScore, y = CompetenceScore, color = factor(ClassLvlAbbr))) + geom_point() + geom_abline()
+```
+
