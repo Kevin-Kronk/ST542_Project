@@ -1,0 +1,86 @@
+---
+title: "EDA"
+format: pdf
+editor: visual
+---
+
+# EDA 
+```{r}
+table <- WorkingData |> group_by(Living_Arrangement) |> summarize(n = n(), comp = sum(CompetenceScore)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
+table
+```
+There is only one entry that answered "e" so may be smart to group with another answer.
+
+# Looking at spread of data for Full dataset that does not include Screen Time
+```{r}
+table2 <- FullData[,c(12,17,18)] |> lapply(summary)
+table2
+```
+
+# Looking at spread of data for Full dataset that does not include Screen Time to compare
+```{r}
+table3 <- WorkingSTData[,c(9,13,18,19)] |> lapply(summary)
+table3
+```
+At a glance, the means do not look to be incredibly different
+
+
+## Graphs of variables
+# Visualizing Sum of total competence score by Living Arrangement -> French Speaking Home
+```{r}
+ggplot(FullData, aes(x = factor(L_Home), y = CompetenceScore, fill = factor(ClassLvlAbbr))) +
+  geom_bar(stat = "summary", fun = "mean") +
+  labs(x = "Lived in a French Speaking Home (0 = No, 1 = Yes)", y = "Total Competence Score")
+```
+This bar plot shows that those that lived in a French Speaking home had a higher overall Competence score on average
+
+
+#Plot of Immersion Score by Competence, colors are Class Level covariate
+```{r}
+ggplot(FullData, aes(x = (ImmersionScore), y = CompetenceScore, color = factor(ClassLvlAbbr))) + geom_point() + geom_abline()
+```
+This graph does not show a clear linear trend here
+
+#Plot of Immersion Score by Intention, colors are Class Level covariate
+```{r}
+ggplot(FullData, aes(x = (ImmersionScore), y = IntentionScore, color = factor(ClassLvlAbbr))) + geom_point() + geom_abline()
+```
+Similar here, no obvious linear trend
+
+# Normality of residuals
+# Model that does not include Screen Time for y = Competence Score
+```{r}
+Comp_model <- lm(CompetenceScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr, data = FullData)
+resid <- residuals(Comp_model)
+ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
+```
+
+# Model that does not include Screen Time for y = Intention Score
+```{r}
+Int_model <- lm(IntentionScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr, data = FullData)
+resid <- residuals(Int_model)
+ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
+```
+
+
+# Model that includes Screen Time for y = Competence Score
+```{r}
+STComp_model <- lm(CompetenceScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr + AvgScreenTime, data = WorkingSTData)
+resid <- residuals(STComp_model)
+ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
+```
+
+# Model that includes Screen Time for y = Intention Score
+```{r}
+STInt_model <- lm(CompetenceScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr + AvgScreenTime, data = WorkingSTData)
+resid <- residuals(STInt_model)
+ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
+```
+
+# Constant Variance
+```{r}
+ggplot(data.frame(fitted = fitted(model), resid = resid), aes(x = fitted, y = resid)) +
+  geom_point()
+```
+
+
