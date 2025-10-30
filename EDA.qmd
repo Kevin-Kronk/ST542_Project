@@ -5,27 +5,38 @@ editor: visual
 ---
 
 # EDA 
+## Tables
+### Table of Living Arrangements and what proportion of the total n each are, as well as what proportion of the total Competence Score they are
 ```{r}
-table <- WorkingData |> group_by(Living_Arrangement) |> summarize(n = n(), comp = sum(CompetenceScore)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
-table
+WorkingData |> group_by(Living_Arrangement) |> summarize(n = n(), comp = sum(CompetenceScore)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
 ```
 There is only one entry that answered "e" so may be smart to group with another answer.
 
-# Looking at spread of data for Full dataset that does not include Screen Time
+# Spread of data for Full dataset that does not include Screen Time
 ```{r}
-table2 <- FullData[,c(12,17,18)] |> lapply(summary)
-table2
+FullData[,c(12,17,18)] |> lapply(summary)
 ```
 
-# Looking at spread of data for Full dataset that does not include Screen Time to compare
+# Spread of data for Full dataset that does not include Screen Time to compare
 ```{r}
-table3 <- WorkingSTData[,c(9,13,18,19)] |> lapply(summary)
-table3
+WorkingSTData[,c(9,13,18,19)] |> lapply(summary)
 ```
-At a glance, the means do not look to be incredibly different
+At a glance, the means do not look to be incredibly different after adding in screen time which removes 33 observations
 
+# Average scores grouped by our Class level covariate
+```{r}
+FullData |> group_by(ClassLvlAbbr) |> summarise(count=n(), avgcompscore = mean(CompetenceScore), avgintscore = mean(IntentionScore), avgImmscore = mean(ImmersionScore), .groups = "drop")
+```
 
 ## Graphs of variables
+
+### Histogram of screen time
+```{r}
+ggplot(WorkingSTData, aes(x= AvgScreenTime)) + geom_boxplot(fill = "orchid")
+```
+
+
+
 # Visualizing Sum of total competence score by Living Arrangement -> French Speaking Home
 ```{r}
 ggplot(FullData, aes(x = factor(L_Home), y = CompetenceScore, fill = factor(ClassLvlAbbr))) +
@@ -43,9 +54,16 @@ This graph does not show a clear linear trend here
 
 #Plot of Immersion Score by Intention, colors are Class Level covariate
 ```{r}
-ggplot(FullData, aes(x = (ImmersionScore), y = IntentionScore, color = factor(ClassLvlAbbr))) + geom_point() + geom_abline()
+ggplot(FullData, aes(x = (ImmersionScore), y = IntentionScore, color = factor(ClassLvlAbbr))) + geom_point()
 ```
 Similar here, no obvious linear trend
+
+# Screen Time Plotted by Competence
+```{r}
+ggplot(WorkingSTData, aes(x = (AvgScreenTime), y = CompetenceScore, color = factor(ClassLvlAbbr))) + geom_point()
+```
+
+
 
 # Normality of residuals
 # Model that does not include Screen Time for y = Competence Score
