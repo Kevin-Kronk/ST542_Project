@@ -29,8 +29,8 @@ french_post_survey <- read_excel("French_Post_Survey.xlsx",sheet=1,
                                    "Screen_Time", "Interact1", "Interact2",
                                    "Interact3", "Interact4", "Interact5",
                                    "Interact6", "Interact7", "Interact8",
-                                   "Interact9", "Interact10", "Speak1",
-                                   "Speak2", "Speak3", "Speak4", "Speak5",
+                                   "Interact9", "Interact10", "Speaking1",
+                                   "Speaking2", "Speaking3", "Speaking4", "Speaking5",
                                    "Speak_Hours1", "Speak_Hours2",
                                    "Speak_Hours3", "Speak_Hours4", 
                                    "Speak_Hours5", "Use_French1", "Use_French2",
@@ -58,13 +58,34 @@ french_post_survey <- french_post_survey[1:61,]
 french_post_survey
 ```
 
+```{r}
+# Subsetting Columns We Will Use In Our Analysis
+french_data <- french_post_survey |>
+  select("Timestamp", "Class_Level", "Living_Arrangement", "LA_a2", "LA_b1",
+         "Phone_Language", "Phone_Keyboard", "Screen_Time", "Interact1", "Interact2",
+         "Interact3", "Interact4", "Interact5", "Interact6", "Interact7", "Interact8",
+         "Interact9", "Interact10", "Speaking1", "Speaking2", "Speaking3", 
+         "Speaking4", "Speaking5", "Speak_Hours1", "Speak_Hours2", 
+         "Speak_Hours3", "Speak_Hours4", "Speak_Hours5", 
+         "Use_French1", "Use_French2", "Use_French3", "Use_French4", "French_Hours1", 
+         "French_Hours2", "French_Hours3", "French_Hours4", "Read_French1", 
+         "Read_French2", "Read_French3", "Read_French4", "Read_French5", 
+         "Write_French1", "Write_French2", "Write_French3", "Write_French4", 
+         "Write_French5", "Listen_French1", "Listen_French2", "Listen_French3", 
+         "Listen_French4", "Listen_French5", "Speak_French1", "Speak_French2", 
+         "Speak_French3", "Speak_French4", "Speak_French5", "Continue_French1", 
+         "Continue_French2", "Continue_French3", "Continue_French4", "Continue_French5")
+
+french_data
+```
+
 ### Response Variables
 
 Reading, Writing, Listening, and Speaking French Perceived Skill. Intention to continue learning French in some capacity.
 
 ```{r}
-french_post_survey |>
-  group_by(Speak_French5) |>
+french_data |>
+  group_by(Read_French2) |>
   summarize(count = n())
 ```
 
@@ -95,23 +116,23 @@ convert_ordinal <- function(col) {
 
 ```{r}
 # How to convert ordinal categorical data to numerical
-french_post_survey <- french_post_survey |>
+french_data <- french_data |>
   mutate(across(all_of(ordinal_columns), convert_ordinal))
 
-french_post_survey
+french_data
 ```
 
 ### Hours Speaking or Using French
 
 ```{r}
 # Lets look at another type of ordinal column
-french_post_survey |>
-  group_by(French_Hours4) |>
+french_data |>
+  group_by(Speak_Hours1) |>
   summarize(count = n())
 ```
 
 ```{r}
-# To convert ordinal categorical values to numbers
+# To convert ordinal categorical hour values to numbers
 ordinal_hours_dict <- c("0-1" = 0,
                         "1-2" = 1,
                         "2-3" = 2,
@@ -130,17 +151,17 @@ convert_ordinal_hours <- function(col) {
 
 ```{r}
 # How to convert ordinal categorical data to numerical
-french_post_survey <- french_post_survey |>
+french_data <- french_data |>
   mutate(across(all_of(ordinal_hours_columns), convert_ordinal_hours))
 
-french_post_survey
+french_data
 ```
 
 ### Interaction With French People Frequency
 
 ```{r}
 # Lets look at another type of ordinal column
-interact<- french_post_survey |>
+interact<- french_data |>
   group_by(Interact10) |>
   summarize(count = n())
 
@@ -148,7 +169,7 @@ interact$Interact10
 ```
 
 ```{r}
-# To convert ordinal categorical values to numbers
+# To convert ordinal categorical interaction values to numbers
 ordinal_interact_dict <- c("not available" = 1,
                            "never" = 2,
                            "rarely (<1 times/week)" = 3,
@@ -167,25 +188,85 @@ convert_ordinal_interact <- function(col) {
 
 ```{r}
 # How to convert ordinal categorical data to numerical
-french_post_survey <- french_post_survey |>
+french_data <- french_data |>
   mutate(across(all_of(ordinal_interact_columns), convert_ordinal_interact))
 
-french_post_survey
+french_data
 ```
 
-### Screen Time Will Need Some Extra Work
+### Screen Time
 
 "Screen_Time" Possibly just manual labor.
+
+```{r}
+screen_time_data <- read_excel("ScreenTimeDat.xlsx")
+
+french_data$Screen_Time <- screen_time_data$AvgScreenTime
+
+french_data
+```
 
 ### Language on Phone and Keyboard Language on Phone
 
 "Phone_Language", "Phone_Keyboard" We may or may not use these.
 
-### Groupness 
+```{r}
+# Lets look at the values in Language on Phone and Keyboard Language on Phone
+french_data |>
+  group_by(Phone_Language) |>
+  summarize(count = n())
+```
 
-"Groupness1", "Groupness2", "Groupness3", "Groupness4", "Groupness5"
+```{r}
+french_data |>
+  group_by(Phone_Keyboard) |>
+  summarize(count = n())
+```
 
-We are not researching this.
+Looks like the general trend for both of these columns is that students either did or did not use French on their phone. We can convert these into binary variables based on this.
+
+```{r}
+# Convert to binary where 0 represents no French on phone, and 1 represents French on phone
+binary_phone_dict <- c("English" = 0,
+                       "English, French" = 1,
+                       "English, French, German" = 1,
+                       "English, French, Korean" = 1,
+                       "English, French, Spanish" = 1,
+                       "English, French, spanish" = 1,
+                       "English, French, Spanish, Greek" = 1,
+                       "English, French, Spanish, Korean" = 1,
+                       "English, French, Spanish, Portuguese" = 1,
+                       "English, French, spanish" = 1,
+                       "French" = 1,
+                       "German" = 0)
+
+
+binary_phone_columns <- c("Phone_Language", "Phone_Keyboard")
+
+convert_binary_phone <- function(col) {
+  return(binary_phone_dict[col])
+}
+```
+
+```{r}
+# Convert the phone variables to binary
+french_data <- french_data |>
+  mutate(across(all_of(binary_phone_columns), convert_binary_phone))
+
+french_data
+```
+
+```{r}
+french_data |>
+  group_by(Phone_Language) |>
+  summarize(count = n())
+```
+
+```{r}
+french_data |>
+  group_by(Phone_Keyboard) |>
+  summarize(count = n())
+```
 
 ### Living Arrangements
 
@@ -193,34 +274,136 @@ We are not researching this.
 
 "LA_a1" may not use - Doesn't have a consistent entry.
 
-"LA_a2", "LA_a3", "LA_a4", "LA_b1", "LA_b2", "LA_b3" All yes or no.
+"LA_a3", "LA_b2", "LA_b3" all do not have enough yes answers. "LA_a4" divides the data into too small of groups and doesn't really seem all that important.
+
+"LA_a2", "LA_b1" All yes or no.
+
+```{r}
+french_data |>
+  group_by(Living_Arrangement) |>
+  summarize(count = n())
+```
+
+There are only two people who lived alone in a room, apartment or house. There's only one person who lived in those environments with others who were not French speakers. I think it's reasonable to say these are equivalent to students who lived in a dorm alone or lived in a dorm with roommates.
+
+```{r}
+french_data <- french_data |>
+  mutate(Host_French = if_else(startsWith(Living_Arrangement, "a"), 
+                               if_else(LA_a2 == "Yes", 0, 1),
+                               0),
+         Host_English = if_else(startsWith(Living_Arrangement, "a"), 
+                                if_else(LA_a2 == "Yes", 1, 0), 
+                                0),
+         Student_Housing = if_else(startsWith(Living_Arrangement, "a"), 
+                                   0, 
+                                   1)) |>
+  select(Timestamp, Class_Level, Host_French, Host_English, Student_Housing,
+         everything(), -Living_Arrangement, -LA_a2, -LA_b1)
+
+french_data
+```
+
+```{r}
+french_data |>
+  group_by(Host_French) |>
+  summarize(count = n())
+```
+
+```{r}
+french_data |>
+  group_by(Host_English) |>
+  summarize(count = n())
+```
+
+```{r}
+french_data |>
+  group_by(Student_Housing) |>
+  summarize(count = n())
+```
 
 ### Class Level
 
 "Class_Level" Need to make sure we know which is the highest.
 
-### Feelings and Reason for Feelings
+Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, C1 - Advanced, C2 - Mastery. FLF 201 - Intermediate French 1, FLF 202 - Intermediate French 2.
 
-"Feelings", "Feelings_Factors" No consistent format, can't use.
+(We might want to ask Dr. Call if it is ok to say FLF 201 is equivalent to B1, and FLF 202 to B2).
 
-### Major and Minor
+```{r}
+french_data |>
+  group_by(Class_Level) |>
+  summarize(count = n())
+```
 
-"Changed_Major", "Changed_Minor", "Masters" No consistent format, not relevant.
+```{r}
+# Convert ordinal Class Level
+class_level_dict <- c("Summer Study Abroad A1-level language class" = 0,
+                      "Summer Study Abroad A2-level language class" = 1,
+                      "Summer Study Abroad B1-level language class" = 2,
+                      "FLF 201" = 2,
+                      "Summer Study Abroad B2-level language class" = 3,
+                      "FLF 202" = 3,
+                      "Summer Study Abroad C1-level language class" = 4)
 
-### Email
 
-"Email" Not relevant, only have entries for the first year.
+class_level_column <- c("Class_Level")
+
+convert_class_level <- function(col) {
+  return(class_level_dict[col])
+}
+```
+
+```{r}
+# Convert the class level variable
+french_data <- french_data |>
+  mutate(across(all_of(class_level_column), convert_class_level))
+
+french_data
+```
 
 ### Year
 
 "Timestamp" Need to convert to just the year.
 
-### Code
+```{r}
+# Convert the class level variable
+french_data <- french_data |>
+  mutate(across(Timestamp, year))
 
-"Code" Only have entries for second and third year, not all match.
+french_data
+```
 
-Technically we could have done some before and after analysis on just 2024 and 2025 where these codes matched, but we would have lost about half of the total data.
+```{r}
+french_data |>
+  group_by(Timestamp) |>
+  summarize(count = n())
+```
 
-### Extra
+### Scores
 
-"Extra1", "Extra2", "Extra3" These were just extra from I believe Dr. Call trying to figure out whose code belonged to who.
+```{r}
+french_data <- french_data |>
+  mutate(Interaction_Score = rowSums(across(starts_with("Interact"))),
+         Speaking_Score = rowSums(across(starts_with("Speaking"))),
+         Speak_Hours_Score = rowSums(across(starts_with("Speak_Hours"))),
+         Use_French_Score = rowSums(across(starts_with("Use_French"))),
+         French_Hours_Score = rowSums(across(starts_with("French_Hours"))),
+         Read_French_Score = rowSums(across(starts_with("Read_French"))),
+         Write_French_Score = rowSums(across(starts_with("Write_French"))),
+         Listen_French_Score = rowSums(across(starts_with("Listen_French"))),
+         Speak_French_Score = rowSums(across(starts_with("Speak_French"))),
+         Continue_French_Score = rowSums(across(starts_with("Continue_French")))) |>
+  select(Timestamp, Class_Level, Host_French, Host_English, Student_Housing,
+         Phone_Language, Phone_Keyboard, Screen_Time, Interaction_Score,
+         Speaking_Score, Speak_Hours_Score, Use_French_Score, French_Hours_Score,
+         Read_French_Score, Write_French_Score, Listen_French_Score, 
+         Speak_French_Score, Continue_French_Score) 
+
+french_data
+```
+
+### Final Export
+
+```{r}
+write_csv(french_data, "processed_french_data.csv")
+```
