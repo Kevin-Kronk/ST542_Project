@@ -30,18 +30,33 @@ FullData |> group_by(ClassLvlAbbr) |> summarise(count=n(), avgcompscore = mean(C
 
 ## Graphs of variables
 
-### Histogram of screen time
+### Boxplot of screen time
 ```{r}
 ggplot(WorkingSTData, aes(x= AvgScreenTime)) + geom_boxplot(fill = "orchid")
 ```
 
+# Histogram of Competence Score, normal curve overlayed
+```{r}
+ggplot(FullData, aes(x= CompetenceScore)) + geom_histogram(aes(y = after_stat(density)), bins = 35) + stat_function(fun = dnorm, args = list(mean = mean(FullData$CompetenceScore), sd = sd(FullData$CompetenceScore)),color = "red")
+```
+
+
+# Histogram of Intention Score, normal curve overlayed
+```{r}
+ggplot(FullData, aes(x= IntentionScore)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(FullData$IntentionScore), sd = sd(FullData$IntentionScore)),color = "red")
+```
+
+# Histogram of Immersion Score, normal curve overlayed
+```{r}
+ggplot(FullData, aes(x= ImmersionScore)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(FullData$ImmersionScore), sd = sd(FullData$ImmersionScore)),color = "red")
+```
 
 
 # Visualizing Sum of total competence score by Living Arrangement -> French Speaking Home
 ```{r}
 ggplot(FullData, aes(x = factor(L_Home), y = CompetenceScore, fill = factor(ClassLvlAbbr))) +
-  geom_bar(stat = "summary", fun = "mean") +
-  labs(x = "Lived in a French Speaking Home (0 = No, 1 = Yes)", y = "Total Competence Score")
+  geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Reds") +
+  labs(x = "Lived in a French Speaking Home (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
 ```
 This bar plot shows that those that lived in a French Speaking home had a higher overall Competence score on average
 
