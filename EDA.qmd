@@ -4,57 +4,65 @@ format: pdf
 editor: visual
 ---
 
+# french_data is the dataset that includes screen time
+```{r}
+french_data <- french_data |> mutate(Immersion_Score = rowSums(across(c(Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, French_Hours_Score))))
+WorkingSTData <- french_data |> drop_na(8) 
+```
+
 # EDA 
 ## Tables
 ### Table of Living Arrangements and what proportion of the total n each are, as well as what proportion of the total Competence Score they are
 ```{r}
-WorkingData |> group_by(Living_Arrangement) |> summarize(n = n(), comp = sum(CompetenceScore)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
+french_data |> group_by(Host_French, Host_English) |> summarize(n = n(), comp = sum(Competence_Score)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
 ```
-There is only one entry that answered "e" so may be smart to group with another answer.
+Top row is Student dorms, and this row seems to be the majority of student living situations.
 
 # Spread of data for Full dataset that does not include Screen Time
 ```{r}
-FullData[,c(12,17,18)] |> lapply(summary)
+french_data[,c(18:20)] |> lapply(summary)
 ```
 
 # Spread of data for Full dataset that does not include Screen Time to compare
 ```{r}
-WorkingSTData[,c(9,13,18,19)] |> lapply(summary)
+WorkingSTData[,c(8,18:20)] |> lapply(summary)
 ```
 At a glance, the means do not look to be incredibly different after adding in screen time which removes 33 observations
 
 # Average scores grouped by our Class level covariate
 ```{r}
-FullData |> group_by(ClassLvlAbbr) |> summarise(count=n(), avgcompscore = mean(CompetenceScore), avgintscore = mean(IntentionScore), avgImmscore = mean(ImmersionScore), .groups = "drop")
+french_data |> group_by(Class_Level) |> summarise(count=n(), avgcompscore = mean(Competence_Score), avgintscore = mean(Continue_French_Score), avgImmscore = mean(Immersion_Score), .groups = "drop")
 ```
+Seems as though by class level, with 4 being the most difficult, competence scores do increase as one would expect.
+
 
 ## Graphs of variables
 
 ### Boxplot of screen time
 ```{r}
-ggplot(WorkingSTData, aes(x= AvgScreenTime)) + geom_boxplot(fill = "orchid")
+ggplot(WorkingSTData, aes(x= Screen_Time)) + geom_boxplot(fill = "orchid")
 ```
 
 # Histogram of Competence Score, normal curve overlayed
 ```{r}
-ggplot(FullData, aes(x= CompetenceScore)) + geom_histogram(aes(y = after_stat(density)), bins = 35) + stat_function(fun = dnorm, args = list(mean = mean(FullData$CompetenceScore), sd = sd(FullData$CompetenceScore)),color = "red")
+ggplot(french_data, aes(x= Competence_Score)) + geom_histogram(aes(y = after_stat(density)), bins = 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Competence_Score), sd = sd(french_data$Competence_Score)),color = "red")
 ```
 
 
 # Histogram of Intention Score, normal curve overlayed
 ```{r}
-ggplot(FullData, aes(x= IntentionScore)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(FullData$IntentionScore), sd = sd(FullData$IntentionScore)),color = "red")
+ggplot(french_data, aes(x= Continue_French_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Continue_French_Score), sd = sd(french_data$Continue_French_Score)),color = "red")
 ```
 
 # Histogram of Immersion Score, normal curve overlayed
 ```{r}
-ggplot(FullData, aes(x= ImmersionScore)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(FullData$ImmersionScore), sd = sd(FullData$ImmersionScore)),color = "red")
+ggplot(french_data, aes(x= Immersion_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Immersion_Score), sd = sd(french_data$Immersion_Score)),color = "red")
 ```
 
 
 # Visualizing Sum of total competence score by Living Arrangement -> French Speaking Home
 ```{r}
-ggplot(FullData, aes(x = factor(L_Home), y = CompetenceScore, fill = factor(ClassLvlAbbr))) +
+ggplot(french_data, aes(x = factor(Host_French), y = Competence_Score, fill = factor(Class_Level))) +
   geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Reds") +
   labs(x = "Lived in a French Speaking Home (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
 ```
@@ -63,57 +71,18 @@ This bar plot shows that those that lived in a French Speaking home had a higher
 
 #Plot of Immersion Score by Competence, colors are Class Level covariate
 ```{r}
-ggplot(FullData, aes(x = (ImmersionScore), y = CompetenceScore, color = factor(ClassLvlAbbr))) + geom_point() + geom_abline()
+ggplot(french_data, aes(x = (Immersion_Score), y = Competence_Score, color = factor(Class_Level))) + geom_point() + geom_abline()
 ```
 This graph does not show a clear linear trend here
 
 #Plot of Immersion Score by Intention, colors are Class Level covariate
 ```{r}
-ggplot(FullData, aes(x = (ImmersionScore), y = IntentionScore, color = factor(ClassLvlAbbr))) + geom_point()
+ggplot(french_data, aes(x = (Immersion_Score), y = Continue_French_Score, color = factor(Class_Level))) + geom_point()
 ```
 Similar here, no obvious linear trend
 
-# Screen Time Plotted by Competence
+# Screen Time Plotted by Competence Score
 ```{r}
-ggplot(WorkingSTData, aes(x = (AvgScreenTime), y = CompetenceScore, color = factor(ClassLvlAbbr))) + geom_point()
+ggplot(WorkingSTData, aes(x = (Screen_Time), y = Competence_Score, color = factor(Class_Level))) + geom_point()
 ```
-
-
-
-# Normality of residuals
-# Model that does not include Screen Time for y = Competence Score
-```{r}
-Comp_model <- lm(CompetenceScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr, data = FullData)
-resid <- residuals(Comp_model)
-ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
-```
-
-# Model that does not include Screen Time for y = Intention Score
-```{r}
-Int_model <- lm(IntentionScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr, data = FullData)
-resid <- residuals(Int_model)
-ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
-```
-
-
-# Model that includes Screen Time for y = Competence Score
-```{r}
-STComp_model <- lm(CompetenceScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr + AvgScreenTime, data = WorkingSTData)
-resid <- residuals(STComp_model)
-ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
-```
-
-# Model that includes Screen Time for y = Intention Score
-```{r}
-STInt_model <- lm(CompetenceScore ~ ImmersionScore + L_Home + L_Dorm + L_Alone + L_Roommates + ClassLvlAbbr + AvgScreenTime, data = WorkingSTData)
-resid <- residuals(STInt_model)
-ggplot(data.frame(resid), aes(sample = resid)) + stat_qq() + stat_qq_line()
-```
-
-# Constant Variance
-```{r}
-ggplot(data.frame(fitted = fitted(model), resid = resid), aes(x = fitted, y = resid)) +
-  geom_point()
-```
-
-
+Similar results as those above
