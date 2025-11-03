@@ -286,6 +286,8 @@ french_data |>
 
 There are only two people who lived alone in a room, apartment or house. There's only one person who lived in those environments with others who were not French speakers. I think it's reasonable to say these are equivalent to students who lived in a dorm alone or lived in a dorm with roommates.
 
+Converting this to just Host_French and Host_English, with the base case where both are 0 being Student_Housing.
+
 ```{r}
 french_data <- french_data |>
   mutate(Host_French = if_else(startsWith(Living_Arrangement, "a"), 
@@ -293,11 +295,8 @@ french_data <- french_data |>
                                0),
          Host_English = if_else(startsWith(Living_Arrangement, "a"), 
                                 if_else(LA_a2 == "Yes", 1, 0), 
-                                0),
-         Student_Housing = if_else(startsWith(Living_Arrangement, "a"), 
-                                   0, 
-                                   1)) |>
-  select(Timestamp, Class_Level, Host_French, Host_English, Student_Housing,
+                                0)) |>
+  select(Timestamp, Class_Level, Host_French, Host_English,
          everything(), -Living_Arrangement, -LA_a2, -LA_b1)
 
 french_data
@@ -312,12 +311,6 @@ french_data |>
 ```{r}
 french_data |>
   group_by(Host_English) |>
-  summarize(count = n())
-```
-
-```{r}
-french_data |>
-  group_by(Student_Housing) |>
   summarize(count = n())
 ```
 
@@ -365,21 +358,34 @@ french_data
 
 "Timestamp" Need to convert to just the year.
 
+Year is being treated as categorical with two binary variables one for 2024 and the other 2025, in which case if both are 0, then we have 2023.
+
 ```{r}
 # Convert the class level variable
 french_data <- french_data |>
-  mutate(across(Timestamp, year))
+  mutate(Year = year(Timestamp),
+         Year_2024 = if_else(Year == 2024, 1, 0),
+         Year_2025 = if_else(Year == 2025, 1, 0)) |>
+  select(Year_2024, Year_2025, everything(), -Timestamp, -Year)
 
 french_data
 ```
 
 ```{r}
 french_data |>
-  group_by(Timestamp) |>
+  group_by(Year_2024) |>
+  summarize(count = n())
+```
+
+```{r}
+french_data |>
+  group_by(Year_2025) |>
   summarize(count = n())
 ```
 
 ### Scores
+
+Might make sense to still look at the Read, Write, Listen, and Speak scores individually so I included them.
 
 ```{r}
 french_data <- french_data |>
@@ -392,12 +398,16 @@ french_data <- french_data |>
          Write_French_Score = rowSums(across(starts_with("Write_French"))),
          Listen_French_Score = rowSums(across(starts_with("Listen_French"))),
          Speak_French_Score = rowSums(across(starts_with("Speak_French"))),
+         Competence_Score = rowSums(across(c(Read_French_Score,
+                                             Write_French_Score,
+                                             Listen_French_Score,
+                                             Speak_French_Score))),
          Continue_French_Score = rowSums(across(starts_with("Continue_French")))) |>
-  select(Timestamp, Class_Level, Host_French, Host_English, Student_Housing,
+  select(Year_2024, Year_2025, Class_Level, Host_French, Host_English,
          Phone_Language, Phone_Keyboard, Screen_Time, Interaction_Score,
          Speaking_Score, Speak_Hours_Score, Use_French_Score, French_Hours_Score,
-         Read_French_Score, Write_French_Score, Listen_French_Score, 
-         Speak_French_Score, Continue_French_Score) 
+         Read_French_Score, Write_French_Score, Listen_French_Score,
+         Speak_French_Score, Competence_Score, Continue_French_Score) 
 
 french_data
 ```
