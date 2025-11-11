@@ -187,6 +187,22 @@ summary(competence_model4)
 ```
 
 ```{r}
+# Competence Might Be slightly left skewed
+plot(density(french_data$Competence_Score))
+```
+
+```{r}
+# Residuals vs Fitted
+plot(competence_model4, which = 1)
+```
+
+```{r}
+# QQ Plot - This is still probably fine and the assumption is still met
+# Though the far left two points may be outliers
+plot(competence_model4, which = 2)
+```
+
+```{r}
 # Removing the least significant variable until the remaining are significant
 # alpha = 0.1
 # intention_model4 <- lm(Continue_French_Score ~
@@ -212,6 +228,21 @@ intention_model4 <- lm(Continue_French_Score ~
                        data = french_data)
 
 summary(intention_model4)
+```
+
+```{r}
+# Intention Score is closer to a normal or at least symmetric distribution
+plot(density(french_data$Continue_French_Score))
+```
+
+```{r}
+# Residuals vs Fitted 
+plot(intention_model4, which = 1)
+```
+
+```{r}
+# QQ Plot
+plot(intention_model4, which = 2)
 ```
 
 Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Continue_French_Score
