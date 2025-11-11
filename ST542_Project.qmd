@@ -91,7 +91,7 @@ french_data$Screen_Time <- screen_time_data$AvgScreenTime
 french_data
 ```
 
-In the class level variable there are FLF 201 - Intermediate French 1 and FLF 202 - Intermediate French 2. These two however are incorrectly entered data, so these values will have to be removed before we begin processing the rest of the data.
+In the class level variable there are some FLF 201 - Intermediate French 1 and FLF 202 - Intermediate French 2. These two however are incorrectly entered data, so these values will have to be removed before we begin processing the rest of the data.
 
 ```{r}
 french_data <- french_data |>
@@ -288,11 +288,7 @@ french_data |>
 
 "Living_Arrangement" Has it's own encoding.
 
-"LA_a1" may not use - Doesn't have a consistent entry.
-
-"LA_a3", "LA_b2", "LA_b3" all do not have enough yes answers. "LA_a4" divides the data into too small of groups and doesn't really seem all that important.
-
-"LA_a2", "LA_b1" All yes or no.
+LA_a1, LA_a2, LA_a3, LA_a4, LA_b1, LA_b2, LA_b3 are all follow up questions based on the Living_Arrangement variable. However, due to the limited nature of the observations of data, subdividing the students among these groups creates too small of subgroups. So we will simply divide the students into those who lived with a host family and those who lived in student housing.
 
 ```{r}
 french_data |>
@@ -300,41 +296,19 @@ french_data |>
   summarize(count = n())
 ```
 
-There are only two people who lived alone in a room, apartment or house. There's only one person who lived in those environments with others who were not French speakers. I think it's reasonable to say these are equivalent to students who lived in a dorm alone or lived in a dorm with roommates.
-
-Converting this to just Host_French and Host_English, with the base case where both are 0 being Student_Housing.
-
 ```{r}
 french_data <- french_data |>
-  mutate(Host_French = if_else(startsWith(Living_Arrangement, "a"), 
-                               if_else(LA_a2 == "Yes", 0, 1),
-                               0),
-         Host_English = if_else(startsWith(Living_Arrangement, "a"), 
-                                if_else(LA_a2 == "Yes", 1, 0), 
-                                0),
-         Host = if_else(startsWith(Living_Arrangement, "a"),
+  mutate(Host_Family = if_else(startsWith(Living_Arrangement, "a"),
                         1, 0)) |>
-  select(Timestamp, Class_Level, Host, Host_French, Host_English,
-         everything(), -Living_Arrangement, -LA_a2, -LA_b1)
+  select(Timestamp, Class_Level, Host_Family, everything(), 
+         -Living_Arrangement, -LA_a2, -LA_b1)
 
 french_data
 ```
 
 ```{r}
 french_data |>
-  group_by(Host_French) |>
-  summarize(count = n())
-```
-
-```{r}
-french_data |>
-  group_by(Host_English) |>
-  summarize(count = n())
-```
-
-```{r}
-french_data |>
-  group_by(Host) |>
+  group_by(Host_Family) |>
   summarize(count = n())
 ```
 
@@ -423,7 +397,7 @@ french_data <- french_data |>
                                              Listen_French_Score,
                                              Speak_French_Score))),
          Continue_French_Score = rowSums(across(starts_with("Continue_French")))) |>
-  select(Year_2024, Year_2025, Class_Level, Host, Host_French, Host_English,
+  select(Year_2024, Year_2025, Class_Level, Host_Family,
          Phone_Language, Phone_Keyboard, Screen_Time, Interaction_Score,
          Speaking_Score, Speak_Hours_Score, Use_French_Score, French_Hours_Score,
          Read_French_Score, Write_French_Score, Listen_French_Score,

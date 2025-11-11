@@ -156,7 +156,7 @@ The Screen Time variable had several issues with data quality and was not signif
 
 ```{r}
 competence_model2 <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
-                         Host_French + Host_English + Phone_Language +
+                         Host_Family + Phone_Language +
                          Phone_Keyboard + Interaction_Score + 
                          Speaking_Score + Speak_Hours_Score +
                          Use_French_Score + French_Hours_Score,
@@ -167,7 +167,7 @@ summary(competence_model2)
 
 ```{r}
 intention_model2 <- lm(Continue_French_Score ~ Year_2024 + Year_2025 + 
-                         Class_Level + Host_French + Host_English + 
+                         Class_Level + Host_Family + 
                          Phone_Language + Phone_Keyboard +
                          Interaction_Score + Speaking_Score + Speak_Hours_Score +
                          Use_French_Score + French_Hours_Score,
@@ -179,7 +179,8 @@ summary(intention_model2)
 ```{r}
 # Removing the least significant variable until the remaining are significant
 competence_model4 <- lm(Competence_Score ~ 
-                          Class_Level +
+                         Class_Level +
+                         Interaction_Score + 
                          Speaking_Score,
                        data = french_data)
 
@@ -204,26 +205,10 @@ plot(competence_model4, which = 2)
 
 ```{r}
 # Removing the least significant variable until the remaining are significant
-# alpha = 0.1
-# intention_model4 <- lm(Continue_French_Score ~
-#                          Class_Level + Host_French + Host_English +
-#                          Phone_Language +
-#                          Interaction_Score + Speak_Hours_Score +
-#                          Use_French_Score,
-#                        data = french_data)
-
-# alpha - 0.1 and Host version
-# intention_model4 <- lm(Continue_French_Score ~
-#                          Class_Level + Host +
-#                          Phone_Language +
-#                          Interaction_Score + Speak_Hours_Score +
-#                          Use_French_Score,
-#                        data = french_data)
-
-
-# alpha = 0.05
+# alpha = 0.5 and 0.1
 intention_model4 <- lm(Continue_French_Score ~
                          Class_Level +
+                         Phone_Language +
                          Interaction_Score,
                        data = french_data)
 
@@ -255,99 +240,12 @@ ggplot(french_data, aes(Competence_Score, Continue_French_Score)) +
   geom_smooth(method="lm", formula = y ~ x)
 ```
 
-If we were to add up the Interaction, Speaking, and Using French Scores to create an Immersion Score. Might need to scale the variables first.
-
-```{r}
-french_data <- french_data |>
-  mutate(Immersion_Score = (Interaction_Score + Speaking_Score +
-                              Speak_Hours_Score + Use_French_Score +
-                              French_Hours_Score))
-```
-
 ```{r}
 french_data |>
   select(everything(), -Screen_Time) |>
   cor(use = "complete.obs")
 ```
 
-Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. We can also see that Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Continue_French_Score had only positive correlations with all of the other variables, albeit many of those correlations are weak.
+Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Continue_French_Score almost had only positive correlations with all of the other variables, albeit many of those correlations are weak.
 
-```{r}
-# Removing the least significant variable until the remaining are significant
-competence_model5 <- lm(Competence_Score ~ 
-                          Class_Level +
-                         Immersion_Score,
-                       data = french_data)
-
-summary(competence_model5)
-```
-
-```{r}
-# Removing the least significant variable until the remaining are significant
-# alpha = 0.1
-# intention_model5 <- lm(Continue_French_Score ~
-#                          Class_Level +
-#                          Phone_Language +
-#                          Immersion_Score,
-#                        data = french_data)
-
-
-# alpha = 0.05
-# intention_model5 <- lm(Continue_French_Score ~
-#                          Class_Level +
-#                          Immersion_Score,
-#                        data = french_data)
-
-summary(intention_model5)
-```
-
-```{r}
-ggplot(french_data, aes(Immersion_Score, Competence_Score)) +
-  geom_point() + 
-  geom_smooth(method="lm", formula = y ~ x)
-```
-
-```{r}
-ggplot(french_data, aes(Immersion_Score, Continue_French_Score)) +
-  geom_point() + 
-  geom_smooth(method="lm", formula = y ~ x)
-```
-
-Creating an Immersion_Score that adds up Interaction, Speaking, Speak Hours, Use French, and French Hours may be going too far. While these variables are all positively correlated with one another, their correlations differ in strength. Additionally, these variables use different scales. Interaction uses a frequency scale from Not Available to Frequently. Speak and Use French used the number of times per week French was used ranging from 0 to 7. Speak Hours and French Hours use the number of hours per day ranging from 0-1 to 5+. Instead it may make more sense to add Speak and Use French since they have the same scale and are almost strongly correlated. Then add Speak Hours and French Hours because they also have the same scale and are strongly correlated.
-
-```{r}
-# Might need to standardize the variables first, but for now it's probably fine
-french_data <- french_data |>
-  mutate(Speak_Use_French_Score = Speaking_Score + Use_French_Score,
-         Speak_Use_Hours_Score = Speak_Hours_Score + Use_French_Score)
-
-french_data
-```
-
-```{r}
-competence_model6 <- lm(Competence_Score ~ 
-                          Class_Level +
-                         Speak_Use_French_Score,
-                       data = french_data)
-
-summary(competence_model6)
-```
-
-```{r}
-#alpha = 0.1
-# intention_model6 <- lm(Continue_French_Score ~
-#                          Class_Level +
-#                          Phone_Language +
-#                          Interaction_Score,
-#                        data = french_data)
-
-# alpha = 0.05
-# intention_model6 <- lm(Continue_French_Score ~
-#                          Class_Level +
-#                          Interaction_Score,
-#                        data = french_data)
-
-summary(intention_model6)
-```
-
-Final conclusion to summing up Interaction, Speak, Speak Hours, Use French, French Hours in any way: It doesn't benefit the models in any way. If anything you lose information in terms of what variables are actually affecting the results. Additionally, the R\^2 values either stay roughly the same, or get worse the more of these variables we sum together.
+Might need to standardize the variables first, but for now it's probably fine
