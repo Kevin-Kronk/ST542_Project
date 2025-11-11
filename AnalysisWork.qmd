@@ -5,116 +5,318 @@ editor: visual
 ---
 
 # Linear Models
+
 # Model that does not include Screen Time for y = Competence Score
+
 ```{r}
 Comp_model <- lm(Competence_Score ~ Immersion_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025, data = french_data)
 summary(Comp_model)
 ```
+
 Seeing that Immersion Score has statistical significance, it is of interest to break down into its categories and test again
 
 ```{r}
 Comp_model_IM <- lm(Competence_Score ~ Interaction_Score + Speaking_Score + Speak_Hours_Score + Use_French_Score +]] French_Hours_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025, data = french_data)
 summary(Comp_model_IM)
 ```
-None of them stand out individually 
+
+None of them stand out individually
 
 # Model that does not include Screen Time for y = Continue French Score
+
 ```{r}
 Int_model <- lm(Continue_French_Score ~ Immersion_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025, data = french_data)
 summary(Int_model)
 ```
-Again the overall Immersion score is statistically signficant, as well as what language they have their phone set to 
+
+Again the overall Immersion score is statistically signficant, as well as what language they have their phone set to
 
 ```{r}
 Int_model_IM <- lm(Continue_French_Score ~ Interaction_Score + Speaking_Score + Speak_Hours_Score + Use_French_Score + French_Hours_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025, data = french_data)
 summary(Int_model_IM)
 ```
-Here, the Interaction Score is significant within Immersion Score. 
+
+Here, the Interaction Score is significant within Immersion Score.
 
 # Model that includes Screen Time for y = Competence Score
+
 ```{r}
 STComp_model <- lm(Competence_Score ~ Immersion_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025 + Screen_Time, data = WorkingSTData)
 summary(STComp_model)
 ```
-Screen Time does not have statistical significance in this model. However once again Immersion Score does. We also see that the global F test does not reject either, and with an adjusted R^2 of .27, we cannot conclude much based on this model. Especially comparing this R^2 to the R^2 of the model not including screen time, this model seems to perform worse.
+
+Screen Time does not have statistical significance in this model. However once again Immersion Score does. We also see that the global F test does not reject either, and with an adjusted R\^2 of .27, we cannot conclude much based on this model. Especially comparing this R\^2 to the R\^2 of the model not including screen time, this model seems to perform worse.
 
 ```{r}
 STComp_model_IM <- lm(Competence_Score ~ Interaction_Score + Speaking_Score + Speak_Hours_Score + Use_French_Score + French_Hours_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025 + Screen_Time, data = WorkingSTData)
 summary(STComp_model_IM)
 ```
-After breaking apart the Immersion Score variables, we can see that Interaction Score has significance. Additionally, Phone_language does now as well. This is also a higher R^2 than the Comp_IM model above that does not include Screen Time
+
+After breaking apart the Immersion Score variables, we can see that Interaction Score has significance. Additionally, Phone_language does now as well. This is also a higher R\^2 than the Comp_IM model above that does not include Screen Time
 
 # Model that includes Screen Time for y = Continue French Score
+
 ```{r}
 STInt_model <- lm(Continue_French_Score ~ Immersion_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025 + Screen_Time, data = WorkingSTData)
 summary(STInt_model)
 ```
-Another very low R^2 value, and a global p-value that does not reject. Let's see if breaking up the significant Immersion_Score variable helps
 
+Another very low R\^2 value, and a global p-value that does not reject. Let's see if breaking up the significant Immersion_Score variable helps
 
 ```{r}
 STInt_model_IM <- lm(Continue_French_Score ~ Interaction_Score + Speaking_Score + Speak_Hours_Score + Use_French_Score + French_Hours_Score + Host_French + Host_English + Phone_Language + Phone_Keyboard + Class_Level + Year_2024 + Year_2025 + Screen_Time, data = WorkingSTData)
 summary(STInt_model_IM)
 ```
+
 This did not improve the model much, still a large global p-value.
 
-# Normality of residuals 
-Chose the model with the better R^2 to check between the overall Immersion Score vs the broken up Immersion Score
+# Normality of residuals
+
+Chose the model with the better R\^2 to check between the overall Immersion Score vs the broken up Immersion Score
 
 # Model that does not include Screen Time for y = Competence Score
+
 ```{r}
 residC <- residuals(Comp_model)
 ggplot(data.frame(residC), aes(sample = residC)) + stat_qq() + stat_qq_line()
 ```
 
 # Model that does not include Screen Time for y = Intention Score
+
 ```{r}
 residI <- residuals(Int_model_IM)
 ggplot(data.frame(residI), aes(sample = residI)) + stat_qq() + stat_qq_line()
 ```
 
-
 # Model that includes Screen Time for y = Competence Score
+
 ```{r}
 residSTC <- residuals(STComp_model_IM)
 ggplot(data.frame(residSTC), aes(sample = residSTC)) + stat_qq() + stat_qq_line()
 ```
 
 # Model that includes Screen Time for y = Intention Score
+
 ```{r}
 residSTI <- residuals(STInt_model_IM)
 ggplot(data.frame(residSTI), aes(sample = residSTI)) + stat_qq() + stat_qq_line()
 ```
 
 # Constant Variance
+
 # Model that does not include Screen Time for y = Competence Score
+
 ```{r}
 ggplot(data.frame(fitted = fitted(Comp_model), resid = residC), aes(x = fitted, y = residC)) +
   geom_point()
 ```
+
 Looks good, does not seem to have patterns or fan out or cluster too much
 
 # Model that does not include Screen Time for y = Intention Score
+
 ```{r}
 ggplot(data.frame(fitted = fitted(Int_model_IM), resid = residI), aes(x = fitted, y = residI)) +
   geom_point()
 ```
+
 Also looks good
 
 # Model that includes Screen Time for y = Competence Score
+
 ```{r}
 ggplot(data.frame(fitted = fitted(STComp_model_IM), resid = residSTC), aes(x = fitted, y = residSTC)) +
   geom_point()
 ```
+
 Also looks good
 
 # Model that includes Screen Time for y = Intention Score
+
 ```{r}
 ggplot(data.frame(fitted = fitted(STInt_model_IM), resid = residSTI), aes(x = fitted, y = residSTI)) +
   geom_point()
 ```
+
 This one does show a bit of fanning out across x
 
 ## Next steps possibly looking at Interaction more as it came up as significant
 
+# Testing New Model
 
+```{r}
+french_data <- read_csv("processed_french_data.csv")
+
+french_data
+```
+
+We can look at the full models will every variable.
+
+The Screen Time variable had several issues with data quality and was not significant in either model, therefore we decided to remove it.
+
+```{r}
+competence_model2 <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
+                         Host_French + Host_English + Phone_Language +
+                         Phone_Keyboard + Interaction_Score + 
+                         Speaking_Score + Speak_Hours_Score +
+                         Use_French_Score + French_Hours_Score,
+                       data = french_data)
+
+summary(competence_model2)
+```
+
+```{r}
+intention_model2 <- lm(Continue_French_Score ~ Year_2024 + Year_2025 + 
+                         Class_Level + Host_French + Host_English + 
+                         Phone_Language + Phone_Keyboard +
+                         Interaction_Score + Speaking_Score + Speak_Hours_Score +
+                         Use_French_Score + French_Hours_Score,
+                       data = french_data)
+
+summary(intention_model2)
+```
+
+```{r}
+# Removing the least significant variable until the remaining are significant
+competence_model4 <- lm(Competence_Score ~ 
+                          Class_Level +
+                         Speaking_Score,
+                       data = french_data)
+
+summary(competence_model4)
+```
+
+```{r}
+# Removing the least significant variable until the remaining are significant
+# alpha = 0.1
+# intention_model4 <- lm(Continue_French_Score ~
+#                          Class_Level + Host_French + Host_English +
+#                          Phone_Language +
+#                          Interaction_Score + Speak_Hours_Score +
+#                          Use_French_Score,
+#                        data = french_data)
+
+# alpha - 0.1 and Host version
+# intention_model4 <- lm(Continue_French_Score ~
+#                          Class_Level + Host +
+#                          Phone_Language +
+#                          Interaction_Score + Speak_Hours_Score +
+#                          Use_French_Score,
+#                        data = french_data)
+
+
+# alpha = 0.05
+intention_model4 <- lm(Continue_French_Score ~
+                         Class_Level +
+                         Interaction_Score,
+                       data = french_data)
+
+summary(intention_model4)
+```
+
+Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Continue_French_Score
+
+```{r}
+# Something interesting I found is that Competence and Intention have 
+# a moderately positive correlation 
+ggplot(french_data, aes(Competence_Score, Continue_French_Score)) +
+  geom_point() + 
+  geom_smooth(method="lm", formula = y ~ x)
+```
+
+If we were to add up the Interaction, Speaking, and Using French Scores to create an Immersion Score. Might need to scale the variables first.
+
+```{r}
+french_data <- french_data |>
+  mutate(Immersion_Score = (Interaction_Score + Speaking_Score +
+                              Speak_Hours_Score + Use_French_Score +
+                              French_Hours_Score))
+```
+
+```{r}
+french_data |>
+  select(everything(), -Screen_Time) |>
+  cor(use = "complete.obs")
+```
+
+Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. We can also see that Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Continue_French_Score had only positive correlations with all of the other variables, albeit many of those correlations are weak.
+
+```{r}
+# Removing the least significant variable until the remaining are significant
+competence_model5 <- lm(Competence_Score ~ 
+                          Class_Level +
+                         Immersion_Score,
+                       data = french_data)
+
+summary(competence_model5)
+```
+
+```{r}
+# Removing the least significant variable until the remaining are significant
+# alpha = 0.1
+# intention_model5 <- lm(Continue_French_Score ~
+#                          Class_Level +
+#                          Phone_Language +
+#                          Immersion_Score,
+#                        data = french_data)
+
+
+# alpha = 0.05
+# intention_model5 <- lm(Continue_French_Score ~
+#                          Class_Level +
+#                          Immersion_Score,
+#                        data = french_data)
+
+summary(intention_model5)
+```
+
+```{r}
+ggplot(french_data, aes(Immersion_Score, Competence_Score)) +
+  geom_point() + 
+  geom_smooth(method="lm", formula = y ~ x)
+```
+
+```{r}
+ggplot(french_data, aes(Immersion_Score, Continue_French_Score)) +
+  geom_point() + 
+  geom_smooth(method="lm", formula = y ~ x)
+```
+
+Creating an Immersion_Score that adds up Interaction, Speaking, Speak Hours, Use French, and French Hours may be going too far. While these variables are all positively correlated with one another, their correlations differ in strength. Additionally, these variables use different scales. Interaction uses a frequency scale from Not Available to Frequently. Speak and Use French used the number of times per week French was used ranging from 0 to 7. Speak Hours and French Hours use the number of hours per day ranging from 0-1 to 5+. Instead it may make more sense to add Speak and Use French since they have the same scale and are almost strongly correlated. Then add Speak Hours and French Hours because they also have the same scale and are strongly correlated.
+
+```{r}
+# Might need to standardize the variables first, but for now it's probably fine
+french_data <- french_data |>
+  mutate(Speak_Use_French_Score = Speaking_Score + Use_French_Score,
+         Speak_Use_Hours_Score = Speak_Hours_Score + Use_French_Score)
+
+french_data
+```
+
+```{r}
+competence_model6 <- lm(Competence_Score ~ 
+                          Class_Level +
+                         Speak_Use_French_Score,
+                       data = french_data)
+
+summary(competence_model6)
+```
+
+```{r}
+#alpha = 0.1
+# intention_model6 <- lm(Continue_French_Score ~
+#                          Class_Level +
+#                          Phone_Language +
+#                          Interaction_Score,
+#                        data = french_data)
+
+# alpha = 0.05
+# intention_model6 <- lm(Continue_French_Score ~
+#                          Class_Level +
+#                          Interaction_Score,
+#                        data = french_data)
+
+summary(intention_model6)
+```
+
+Final conclusion to summing up Interaction, Speak, Speak Hours, Use French, French Hours in any way: It doesn't benefit the models in any way. If anything you lose information in terms of what variables are actually affecting the results. Additionally, the R\^2 values either stay roughly the same, or get worse the more of these variables we sum together.

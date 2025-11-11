@@ -79,6 +79,34 @@ french_data <- french_post_survey |>
 french_data
 ```
 
+### Preliminary Data Processing
+
+The Screen Time variable has been calculated in another excel file and needs to be added to this dataset.
+
+```{r}
+screen_time_data <- read_excel("ScreenTimeDat.xlsx")
+
+french_data$Screen_Time <- screen_time_data$AvgScreenTime
+
+french_data
+```
+
+In the class level variable there are FLF 201 - Intermediate French 1 and FLF 202 - Intermediate French 2. These two however are incorrectly entered data, so these values will have to be removed before we begin processing the rest of the data.
+
+```{r}
+french_data <- french_data |>
+  filter(Class_Level != "FLF 201",
+         Class_Level != "FLF 202")
+
+french_data
+```
+
+```{r}
+french_data |>
+  group_by(Class_Level) |>
+  summarize(count = n())
+```
+
 ### Response Variables
 
 Reading, Writing, Listening, and Speaking French Perceived Skill. Intention to continue learning French in some capacity.
@@ -194,18 +222,6 @@ french_data <- french_data |>
 french_data
 ```
 
-### Screen Time
-
-"Screen_Time" Possibly just manual labor.
-
-```{r}
-screen_time_data <- read_excel("ScreenTimeDat.xlsx")
-
-french_data$Screen_Time <- screen_time_data$AvgScreenTime
-
-french_data
-```
-
 ### Language on Phone and Keyboard Language on Phone
 
 "Phone_Language", "Phone_Keyboard" We may or may not use these.
@@ -295,8 +311,10 @@ french_data <- french_data |>
                                0),
          Host_English = if_else(startsWith(Living_Arrangement, "a"), 
                                 if_else(LA_a2 == "Yes", 1, 0), 
-                                0)) |>
-  select(Timestamp, Class_Level, Host_French, Host_English,
+                                0),
+         Host = if_else(startsWith(Living_Arrangement, "a"),
+                        1, 0)) |>
+  select(Timestamp, Class_Level, Host, Host_French, Host_English,
          everything(), -Living_Arrangement, -LA_a2, -LA_b1)
 
 french_data
@@ -314,13 +332,17 @@ french_data |>
   summarize(count = n())
 ```
 
+```{r}
+french_data |>
+  group_by(Host) |>
+  summarize(count = n())
+```
+
 ### Class Level
 
 "Class_Level" Need to make sure we know which is the highest.
 
-Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, C1 - Advanced, C2 - Mastery. FLF 201 - Intermediate French 1, FLF 202 - Intermediate French 2.
-
-(We might want to ask Dr. Call if it is ok to say FLF 201 is equivalent to B1, and FLF 202 to B2).
+Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, C1 - Advanced, C2 - Mastery.
 
 ```{r}
 french_data |>
@@ -333,9 +355,7 @@ french_data |>
 class_level_dict <- c("Summer Study Abroad A1-level language class" = 0,
                       "Summer Study Abroad A2-level language class" = 1,
                       "Summer Study Abroad B1-level language class" = 2,
-                      "FLF 201" = 2,
                       "Summer Study Abroad B2-level language class" = 3,
-                      "FLF 202" = 3,
                       "Summer Study Abroad C1-level language class" = 4)
 
 
@@ -403,7 +423,7 @@ french_data <- french_data |>
                                              Listen_French_Score,
                                              Speak_French_Score))),
          Continue_French_Score = rowSums(across(starts_with("Continue_French")))) |>
-  select(Year_2024, Year_2025, Class_Level, Host_French, Host_English,
+  select(Year_2024, Year_2025, Class_Level, Host, Host_French, Host_English,
          Phone_Language, Phone_Keyboard, Screen_Time, Interaction_Score,
          Speaking_Score, Speak_Hours_Score, Use_French_Score, French_Hours_Score,
          Read_French_Score, Write_French_Score, Listen_French_Score,
