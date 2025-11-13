@@ -1,0 +1,218 @@
+---
+title: "French Study Abroad Project Analysis"
+format: pdf
+editor: visual
+---
+
+# Load Data
+
+```{r}
+# Load the preprocessed data
+french_data <- read_csv("data/processed_french_data.csv")
+
+french_data
+```
+
+# EDA
+
+## Tables
+
+### Table of Living Arrangements and what proportion of the total n each are, as well as what proportion of the total Competence Score they are
+
+```{r}
+french_data |> group_by(Host_Family) |> summarize(n = n(), comp = sum(Competence_Score)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
+```
+
+Top row is Student dorms, and this row seems to be the majority of student living situations.
+
+### Spread of data for Full dataset that does not include Screen Time
+
+```{r}
+french_data |> lapply(summary)
+```
+
+### Average scores grouped by our Class level covariate
+
+```{r}
+french_data |> group_by(Class_Level) |> summarise(count=n(), avgcompscore = mean(Competence_Score), avgintscore = mean(Continue_French_Score), .groups = "drop")
+```
+
+Seems as though by class level, with 4 being the most difficult, competence scores do increase as one would expect.
+
+## Graphs of variables
+
+### Boxplot of screen time
+
+```{r}
+ggplot(french_data, aes(x= Screen_Time)) + geom_boxplot(fill = "orchid")
+```
+
+### Histogram of Competence Score, normal curve overlayed
+
+```{r}
+ggplot(french_data, aes(x= Competence_Score)) + geom_histogram(aes(y = after_stat(density)), bins = 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Competence_Score), sd = sd(french_data$Competence_Score)),color = "red")
+```
+
+### Histogram of Intention Score, normal curve overlayed
+
+```{r}
+ggplot(french_data, aes(x= Continue_French_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Continue_French_Score), sd = sd(french_data$Continue_French_Score)),color = "red")
+```
+
+### Histogram of Interaction Score, normal curve overlayed
+
+```{r}
+ggplot(french_data, aes(x= Interaction_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Interaction_Score), sd = sd(french_data$Interaction_Score)),color = "red")
+```
+
+### Visualizing Sum of total competence score by Living Arrangement -\> French Speaking Home
+
+```{r}
+ggplot(french_data, aes(x = factor(Host_Family), y = Competence_Score, fill = factor(Class_Level))) +
+  geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Reds") +
+  labs(x = "Lived with a Host Family (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
+```
+
+This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
+
+### Plot of Immersion Score by Competence, colors are Class Level covariate
+
+```{r}
+ggplot(french_data, aes(x = (Interaction_Score), y = Competence_Score, color = factor(Class_Level))) + geom_point() + geom_abline()
+```
+
+This graph does not show a clear linear trend here
+
+### Plot of Immersion Score by Intention, colors are Class Level covariate
+
+```{r}
+ggplot(french_data, aes(x = (Interaction_Score), y = Continue_French_Score, color = factor(Class_Level))) + geom_point()
+```
+
+Similar here, no obvious linear trend
+
+### Screen Time Plotted by Competence Score
+
+```{r}
+ggplot(french_data, aes(x = (Screen_Time), y = Competence_Score, color = factor(Class_Level))) + geom_point()
+```
+
+Similar results as those above
+
+# Linear Models
+
+The Screen Time variable had several issues with data quality and was not significant in either model, therefore we decided to remove it.
+
+-   Screen Time does not have statistical significance in this model. However once again Immersion Score does. We also see that the global F test does not reject either, and with an adjusted R\^2 of .27, we cannot conclude much based on this model. Especially comparing this R\^2 to the R\^2 of the model not including screen time, this model seems to perform worse.
+
+-   Also our client agreed that the variable didn't make sense as is and that we should remove it.
+
+```{r}
+competence_model2 <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
+                         Host_Family + Phone_Language +
+                         Phone_Keyboard + Interaction_Score + 
+                         Speaking_Score + Speak_Hours_Score +
+                         Use_French_Score + French_Hours_Score,
+                       data = french_data)
+
+summary(competence_model2)
+```
+
+```{r}
+intention_model2 <- lm(Continue_French_Score ~ Year_2024 + Year_2025 + 
+                         Class_Level + Host_Family + 
+                         Phone_Language + Phone_Keyboard +
+                         Interaction_Score + Speaking_Score + Speak_Hours_Score +
+                         Use_French_Score + French_Hours_Score,
+                       data = french_data)
+
+summary(intention_model2)
+```
+
+```{r}
+# Removing the least significant variable until the remaining are significant
+competence_model4 <- lm(Competence_Score ~ 
+                         Class_Level +
+                         Interaction_Score + 
+                         Speaking_Score,
+                       data = french_data)
+
+summary(competence_model4)
+```
+
+```{r}
+# Competence Might Be slightly left skewed
+plot(density(french_data$Competence_Score))
+```
+
+```{r}
+# Residuals vs Fitted
+plot(competence_model4, which = 1)
+```
+
+```{r}
+# Holly's version of Fitted Values vs Residual Plot
+ggplot(data.frame(fitted = fitted(Comp_model), resid = residC), aes(x = fitted, y = residC)) +
+  geom_point()
+```
+
+Looks good, does not seem to have patterns or fan out or cluster too much
+
+```{r}
+# QQ Plot - This is still probably fine and the assumption is still met
+# Though the far left two points may be outliers
+plot(competence_model4, which = 2)
+```
+
+```{r}
+# Holly's Version of QQ Plot
+residI <- residuals(Int_model_IM)
+ggplot(data.frame(residI), aes(sample = residI)) + stat_qq() + stat_qq_line()
+```
+
+```{r}
+# Removing the least significant variable until the remaining are significant
+# alpha = 0.5 and 0.1
+intention_model4 <- lm(Continue_French_Score ~
+                         Class_Level +
+                         Phone_Language +
+                         Interaction_Score,
+                       data = french_data)
+
+summary(intention_model4)
+```
+
+```{r}
+# Intention Score is closer to a normal or at least symmetric distribution
+plot(density(french_data$Continue_French_Score))
+```
+
+```{r}
+# Residuals vs Fitted 
+plot(intention_model4, which = 1)
+```
+
+```{r}
+# QQ Plot
+plot(intention_model4, which = 2)
+```
+
+Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Continue_French_Score
+
+```{r}
+# Something interesting I found is that Competence and Intention have 
+# a moderately positive correlation 
+ggplot(french_data, aes(Competence_Score, Continue_French_Score)) +
+  geom_point() + 
+  geom_smooth(method="lm", formula = y ~ x)
+```
+
+```{r}
+french_data |>
+  select(everything(), -Screen_Time) |>
+  cor(use = "complete.obs")
+```
+
+Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Continue_French_Score almost had only positive correlations with all of the other variables, albeit many of those correlations are weak.
+
+Might need to standardize the variables first, but for now it's probably fine
