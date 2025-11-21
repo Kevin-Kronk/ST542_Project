@@ -17,7 +17,7 @@ library(readxl)
 ```
 
 ```{r}
-french_post_survey <- read_excel("data/French_Post_Survey.xlsx",sheet=1,
+french_post_survey <- read_excel("French_Post_Survey.xlsx",sheet=1,
                       col_names = c("Timestamp", "Email", "Changed_Major",
                                    "Changed_Minor", "Masters", "Feelings",
                                    "Feelings_Factors", "Class_Level", 
@@ -85,7 +85,7 @@ french_data
 The Screen Time variable has been calculated in another excel file and needs to be added to this dataset.
 
 ```{r}
-screen_time_data <- read_excel("data/ScreenTimeDat.xlsx")
+screen_time_data <- read_excel("ScreenTimeDat.xlsx")
 
 french_data$Screen_Time <- screen_time_data$AvgScreenTime
 
@@ -397,12 +397,12 @@ french_data <- french_data |>
                                              Write_French_Score,
                                              Listen_French_Score,
                                              Speak_French_Score))),
-         Continue_French_Score = rowSums(across(starts_with("Continue_French")))) |>
+         Intention_Score = rowSums(across(starts_with("Continue_French")))) |>
   select(Year_2024, Year_2025, Class_Level, Host_Family,
          Phone_Language, Phone_Keyboard, Screen_Time, Interaction_Score,
          Speaking_Score, Speak_Hours_Score, Use_French_Score, French_Hours_Score,
          Read_French_Score, Write_French_Score, Listen_French_Score,
-         Speak_French_Score, Competence_Score, Continue_French_Score) 
+         Speak_French_Score, Competence_Score, Intention_Score) 
 
 french_data
 ```
@@ -410,5 +410,5 @@ french_data
 ### Final Export
 
 ```{r}
-write_csv(french_data, "data/processed_french_data.csv")
+write_csv(french_data, "processed_french_data.csv")
 ```
