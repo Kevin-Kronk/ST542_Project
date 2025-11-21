@@ -4,11 +4,16 @@ format: pdf
 editor: visual
 ---
 
+```{r}
+library(ggplot2)
+library(MASS)
+```
+
 # Load Data
 
 ```{r}
 # Load the preprocessed data
-french_data <- read_csv("data/processed_french_data.csv")
+french_data <- read_csv("processed_french_data.csv")
 
 french_data
 ```
@@ -25,16 +30,17 @@ french_data |> group_by(Host_Family) |> summarize(n = n(), comp = sum(Competence
 
 Top row is Student dorms, and this row seems to be the majority of student living situations.
 
-### Spread of data for Full dataset that does not include Screen Time
+### Spread of data for Full dataset
 
 ```{r}
 french_data |> lapply(summary)
 ```
 
+
 ### Average scores grouped by our Class level covariate
 
 ```{r}
-french_data |> group_by(Class_Level) |> summarise(count=n(), avgcompscore = mean(Competence_Score), avgintscore = mean(Continue_French_Score), .groups = "drop")
+french_data |> group_by(Class_Level) |> summarise(count=n(), avgcompscore = mean(Competence_Score), avgintscore = mean(Intention_Score), .groups = "drop")
 ```
 
 Seems as though by class level, with 4 being the most difficult, competence scores do increase as one would expect.
@@ -47,17 +53,23 @@ Seems as though by class level, with 4 being the most difficult, competence scor
 ggplot(french_data, aes(x= Screen_Time)) + geom_boxplot(fill = "orchid")
 ```
 
+Looks to be somewhat skewed, also a couple outliers to the far right
+
 ### Histogram of Competence Score, normal curve overlayed
 
 ```{r}
 ggplot(french_data, aes(x= Competence_Score)) + geom_histogram(aes(y = after_stat(density)), bins = 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Competence_Score), sd = sd(french_data$Competence_Score)),color = "red")
 ```
 
+Not awful, bi-modal skewed to the left a bit
+
 ### Histogram of Intention Score, normal curve overlayed
 
 ```{r}
-ggplot(french_data, aes(x= Continue_French_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Continue_French_Score), sd = sd(french_data$Continue_French_Score)),color = "red")
+ggplot(french_data, aes(x= Intention_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Intention_Score), sd = sd(french_data$Intention_Score)),color = "red")
 ```
+
+Multi-modal histogram, not very symmetric
 
 ### Histogram of Interaction Score, normal curve overlayed
 
@@ -69,24 +81,24 @@ ggplot(french_data, aes(x= Interaction_Score)) + geom_histogram(aes(y = after_st
 
 ```{r}
 ggplot(french_data, aes(x = factor(Host_Family), y = Competence_Score, fill = factor(Class_Level))) +
-  geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Reds") +
+  geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Greens") +
   labs(x = "Lived with a Host Family (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
 ```
 
 This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
 
-### Plot of Immersion Score by Competence, colors are Class Level covariate
+### Plot of Interaction Score by Competence, colors are Class Level covariate
 
 ```{r}
-ggplot(french_data, aes(x = (Interaction_Score), y = Competence_Score, color = factor(Class_Level))) + geom_point() + geom_abline()
+ggplot(french_data, aes(x = Interaction_Score, y = Competence_Score, color = factor(Class_Level), shape = factor(Class_Level))) + geom_point()
 ```
 
 This graph does not show a clear linear trend here
 
-### Plot of Immersion Score by Intention, colors are Class Level covariate
+### Plot of Interaction Score by Intention, colors are Class Level covariate
 
 ```{r}
-ggplot(french_data, aes(x = (Interaction_Score), y = Continue_French_Score, color = factor(Class_Level))) + geom_point()
+ggplot(french_data, aes(x = (Interaction_Score), y = Intention_Score, color = factor(Class_Level), shape = factor(Class_Level))) + geom_point()
 ```
 
 Similar here, no obvious linear trend
@@ -94,7 +106,7 @@ Similar here, no obvious linear trend
 ### Screen Time Plotted by Competence Score
 
 ```{r}
-ggplot(french_data, aes(x = (Screen_Time), y = Competence_Score, color = factor(Class_Level))) + geom_point()
+ggplot(french_data, aes(x = (Screen_Time), y = Competence_Score, color = factor(Class_Level), shape = factor(Class_Level) )) + geom_point()
 ```
 
 Similar results as those above
@@ -119,7 +131,7 @@ summary(competence_model2)
 ```
 
 ```{r}
-intention_model2 <- lm(Continue_French_Score ~ Year_2024 + Year_2025 + 
+intention_model2 <- lm(Intention_Score ~ Year_2024 + Year_2025 + 
                          Class_Level + Host_Family + 
                          Phone_Language + Phone_Keyboard +
                          Interaction_Score + Speaking_Score + Speak_Hours_Score +
@@ -127,6 +139,11 @@ intention_model2 <- lm(Continue_French_Score ~ Year_2024 + Year_2025 +
                        data = french_data)
 
 summary(intention_model2)
+```
+
+# Model Checking using AIC
+```{r}
+stepAIC(competence_model2, method = "backward")
 ```
 
 ```{r}
@@ -150,12 +167,6 @@ plot(density(french_data$Competence_Score))
 plot(competence_model4, which = 1)
 ```
 
-```{r}
-# Holly's version of Fitted Values vs Residual Plot
-ggplot(data.frame(fitted = fitted(Comp_model), resid = residC), aes(x = fitted, y = residC)) +
-  geom_point()
-```
-
 Looks good, does not seem to have patterns or fan out or cluster too much
 
 ```{r}
@@ -165,15 +176,13 @@ plot(competence_model4, which = 2)
 ```
 
 ```{r}
-# Holly's Version of QQ Plot
-residI <- residuals(Int_model_IM)
-ggplot(data.frame(residI), aes(sample = residI)) + stat_qq() + stat_qq_line()
+stepAIC(intention_model2, method = "backward")
 ```
 
 ```{r}
 # Removing the least significant variable until the remaining are significant
 # alpha = 0.5 and 0.1
-intention_model4 <- lm(Continue_French_Score ~
+intention_model4 <- lm(Intention_Score ~
                          Class_Level +
                          Phone_Language +
                          Interaction_Score,
@@ -184,7 +193,7 @@ summary(intention_model4)
 
 ```{r}
 # Intention Score is closer to a normal or at least symmetric distribution
-plot(density(french_data$Continue_French_Score))
+plot(density(french_data$Intention_Score))
 ```
 
 ```{r}
@@ -197,12 +206,12 @@ plot(intention_model4, which = 1)
 plot(intention_model4, which = 2)
 ```
 
-Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Continue_French_Score
+Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Intention_Score
 
 ```{r}
 # Something interesting I found is that Competence and Intention have 
 # a moderately positive correlation 
-ggplot(french_data, aes(Competence_Score, Continue_French_Score)) +
+ggplot(french_data, aes(Competence_Score, Intention_Score)) +
   geom_point() + 
   geom_smooth(method="lm", formula = y ~ x)
 ```
@@ -213,6 +222,6 @@ french_data |>
   cor(use = "complete.obs")
 ```
 
-Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Continue_French_Score almost had only positive correlations with all of the other variables, albeit many of those correlations are weak.
+Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Intention_Score almost had only positive correlations with all of the other variables, albeit many of those correlations are weak.
 
 Might need to standardize the variables first, but for now it's probably fine
