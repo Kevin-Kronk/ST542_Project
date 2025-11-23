@@ -1,0 +1,96 @@
+---
+title: "Cook's Distance"
+output: html_notebook
+---
+
+# Competence Score Model
+
+```{r}
+cooksdc <- cooks.distance(competence_model4)
+plot(cooksdc, xlab = "Observation Number", ylab = "Cook's Distance")
+abline(h = 4/nrow(french_data), col = "red", lty = 2)
+inflabc <- which(cooksdc > 4/nrow(french_data))
+text(inflabc, cooksdc[inflabc], labels = inflabc, pos=2)
+```
+Looks like observation 45 is not an influential point
+
+remove and rerun model to check
+```{r}
+no_outlier_comp <- french_data %>% filter(row_number() != 45)
+
+competence_model_cd <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
+                         Host_Family + Phone_Language +
+                         Phone_Keyboard + Interaction_Score + 
+                         Speaking_Score + Speak_Hours_Score +
+                         Use_French_Score + French_Hours_Score,
+                       data = no_outlier_comp)
+
+summary(competence_model_cd)
+```
+Slightly changes outcome, next rerun StepAIC to see if there is a new best model
+
+```{r}
+stepAIC(competence_model_cd, method = "backward")
+```
+
+There is a new best model, run this and use R^2 to compare which model is "better"
+
+```{r}
+competence_model_cd2 <- lm(Competence_Score ~ Class_Level + Phone_Language + Interaction_Score + 
+    Speaking_Score, data = no_outlier_comp)
+
+summary(competence_model_cd2)
+```
+This model has a better R^2, model performs better once the influential point is removed.
+
+
+## Intention Model
+```{r}
+cooksdi <- cooks.distance(intention_model4)
+plot(cooksdi, xlab = "Observation Number", ylab = "Cook's Distance")
+abline(h = 4/nrow(french_data), col = "red", lty = 2)
+inflabi <- which(cooksdi > 4/nrow(french_data))
+text(inflabi, cooksdi[inflabi], labels = inflabi, pos=2)
+```
+There are three influential points. Rerun the model and see if they improve the model once removed
+
+
+```{r}
+no_outlier_int <- french_data %>% filter(!row_number() %in% c(3,7,47))
+
+intention_model_cd <- lm(Intention_Score ~ Year_2024 + Year_2025 + 
+                         Class_Level + Host_Family + 
+                         Phone_Language + Phone_Keyboard +
+                         Interaction_Score + Speaking_Score + Speak_Hours_Score +
+                         Use_French_Score + French_Hours_Score,
+                       data = no_outlier_int)
+
+summary(intention_model_cd)
+```
+Once again we see some changes in results after removing the influential points
+
+```{r}
+stepAIC(intention_model_cd)
+```
+The overall models are once again slightly different
+
+```{r}
+intention_model_cd2 <- lm(Intention_Score ~
+                            Class_Level + 
+                            Host_Family + 
+                            Phone_Language + 
+                            Phone_Keyboard +
+                            Interaction_Score +   
+                            Speak_Hours_Score + 
+                            Use_French_Score,
+                       data = no_outlier_int)
+
+summary(intention_model_cd2)
+```
+The R^2 improved over 10% after removing the influential points. 
+
+```{r}
+plot(intention_model_cd2, which = 2)
+```
+
+
