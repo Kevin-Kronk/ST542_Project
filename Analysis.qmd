@@ -36,7 +36,6 @@ Top row is Student dorms, and this row seems to be the majority of student livin
 french_data |> lapply(summary)
 ```
 
-
 ### Average scores grouped by our Class level covariate
 
 ```{r}
@@ -90,7 +89,7 @@ This bar plot shows that those that lived with a Host Family had a higher overal
 ### Plot of Interaction Score by Competence, colors are Class Level covariate
 
 ```{r}
-ggplot(french_data, aes(x = Interaction_Score, y = Competence_Score, color = factor(Class_Level), shape = factor(Class_Level))) + geom_point()
+ggplot(french_data, aes(x = Speaking_Score, y = Competence_Score, color = factor(Class_Level), shape = factor(Class_Level))) + geom_point() + labs(x = "Speaking Score", y = "Competence Score", color = "Class Level", shape = "Class Level")
 ```
 
 This graph does not show a clear linear trend here
@@ -142,15 +141,15 @@ summary(intention_model2)
 ```
 
 # Model Checking using AIC
+
 ```{r}
 stepAIC(competence_model2, method = "backward")
 ```
 
 ```{r}
-# Removing the least significant variable until the remaining are significant
+# After model checking
 competence_model4 <- lm(Competence_Score ~ 
                          Class_Level +
-                         Interaction_Score + 
                          Speaking_Score,
                        data = french_data)
 
@@ -167,7 +166,13 @@ plot(density(french_data$Competence_Score))
 plot(competence_model4, which = 1)
 ```
 
-Looks good, does not seem to have patterns or fan out or cluster too much
+Looks good, does not seem to have patterns or fan out or cluster too much. Some outliers.
+
+Checking the outliers revealed that 
+- for entry 45, the student had a higher perceived Competence score (82) than usual based on their fairly low Speaking Score (10) and Class Level (1)
+- For entry 16, the student had a lower perceived Competence score (29) than usual based on their fairly low Speaking Score (22) and Class Level (1)
+- For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
+
 
 ```{r}
 # QQ Plot - This is still probably fine and the assumption is still met
@@ -180,12 +185,14 @@ stepAIC(intention_model2, method = "backward")
 ```
 
 ```{r}
-# Removing the least significant variable until the remaining are significant
-# alpha = 0.5 and 0.1
+# After model checking
 intention_model4 <- lm(Intention_Score ~
-                         Class_Level +
-                         Phone_Language +
-                         Interaction_Score,
+                            Class_Level + 
+                            Host_Family + 
+                            Phone_Language + 
+                            Interaction_Score +   
+                            Speak_Hours_Score + 
+                            Use_French_Score,
                        data = french_data)
 
 summary(intention_model4)
@@ -200,6 +207,15 @@ plot(density(french_data$Intention_Score))
 # Residuals vs Fitted 
 plot(intention_model4, which = 1)
 ```
+
+once again, we should check the noted outliers
+
+- for entry 24, the student had a higher Intention score (18) than usual based on their other entries in the model
+(class level 1, did not live with a french speaking family, did not have french as a phone language, above average interaction score etc)
+- For entry 3, the student had a lower Intention score (6) than usual based on their other entries in the model
+(class level 0, did not live with a french speaking family, did not french as a phone language, above average interaction score etc )
+- For entry 47, the student had a lower Intention score (14) than usual based on their other entries in the model
+(class level 4, lived with a french speaking family, had french as a phone language, above average interaction score etc)
 
 ```{r}
 # QQ Plot
