@@ -5,21 +5,148 @@ editor: visual
 ---
 
 ```{r}
-library(ggplot2)
+# Load libraries
 library(MASS)
-library(dplyr)
+library(tidyverse)
 ```
 
 # Load Data
 
 ```{r}
 # Load the preprocessed data
-french_data <- read_csv("processed_french_data.csv")
+french_data <- read_csv("data/Processed_French_Data.csv",
+                        show_col_types = FALSE)
 
 french_data
 ```
 
 # EDA
+
+### Summary Statistics
+
+The data has 58 observations and 14 variables that we will be analyzing. Twelve of these variables are predictors and two, Competence_Score and Intention_Score, are response variables.
+
+```{r}
+# Check for missing data
+colSums(is.na(french_data))
+```
+
+The Screen_Time variable has 31 missing values. If we were to create a model using Screen_Time we would have to remove all of those observations, despite the fact that they are not missing in the other variables because a linear regression model cannot handle missing values.
+
+Basic Summary Statistics for continuous variables
+
+```{r}
+continuous_variables <- c("Class_Level", "Screen_Time", "Interaction_Score",
+                          "Speaking_Score", "Speak_Hours_Score", 
+                          "Use_French_Score", "French_Hours_Score",
+                          "Competence_Score", "Intention_Score")
+summary(french_data[,continuous_variables])
+```
+
+It's important to note that Interaction_Score ranged from 0 to 40, Speaking_Score from 0 to 35, Speak_Hours_Score from 0 to 25, Use_French_Score from 0 to 28, French_Hours_Score from 0 to 20, Competence_Score from 0 to 80, and Intention_Score from 0 to 20. So all of these summary statistics look to be within their theoretical ranges. Screen_Time has a very large range from the minimum to the maximum, with the lowest being 2.4 hours per week on average, and the highest being about 47.8 hours per week on average. So that may require more looking into.
+
+Counts for binary variables
+
+```{r}
+binary_variables <- c("Year_2024", "Year_2025", "Host_Family", "Phone_Language",
+                      "Phone_Keyboard")
+
+french_data |>
+    group_by(Year_2024) |>
+    summarize(count = n())
+  
+french_data |>
+    group_by(Year_2025) |>
+    summarize(count = n())
+
+french_data |>
+    group_by(Host_Family) |>
+    summarize(count = n())
+
+french_data |>
+    group_by(Phone_Language) |>
+    summarize(count = n())
+
+french_data |>
+    group_by(Phone_Keyboard) |>
+    summarize(count = n())
+```
+
+Year_2024, Year_2025, Host_Family, and Phone_Language all have more 0 (no) entries than 1, whereas Phone_Keyboard has more 1s. Phone_Language is the only one that appears to have a roughly equal split, whereas the others are skewed.
+
+Convert binary variables to factor.
+
+```{r}
+french_data <- french_data |>
+  mutate(across(all_of(binary_variables), as.factor))
+```
+
+### Tables?
+
+### Plots 
+
+Year
+
+```{r}
+french_data <- french_data |>
+  mutate(Year = ifelse(Year_2024 == 1, "2024", 
+                          ifelse(Year_2025 == 1, "2025", "2023"))) 
+
+french_data |>
+  group_by(Year)|>
+  summarize(count = n())
+```
+
+```{r}
+ggplot(french_data, aes(Year, fill = Year)) +
+  geom_bar()
+```
+
+There's a difference in the number of students per year, but no clear pattern.
+
+```{r}
+ggplot(french_data, aes(Year, Competence_Score, color = Year)) +
+  geom_boxplot()
+```
+
+For Year compared to Competence_Score, there doesn't seem to be any major difference in the overall distributions of the three years. The year 2025 has a slightly higher average Competence Score than 2023 or 2024.
+
+```{r}
+ggplot(french_data, aes(Year, Intention_Score, color = Year)) +
+  geom_boxplot()
+```
+
+For Year vs Intention_Score, 2024 has a smaller IQR and range than 2023 and 2025, with a slightly higher average Intention_Score. Both 2023 and 2025 have very similar distributions.
+
+Class Level
+
+```{r}
+ggplot(french_data, aes(Class_Level, fill = factor(Class_Level))) +
+  geom_bar()
+```
+
+The Class_Level is somewhat right skewed with most students in the lowest levels and very few at the highest level.
+
+```{r}
+ggplot(french_data, aes(Class_Level, Competence_Score, 
+                        color = factor(Class_Level))) +
+  geom_boxplot()
+```
+
+There is a very clear correlation between increasing Class_Level and increasing perceived Competence_Score.
+
+```{r}
+ggplot(french_data, aes(Class_Level, Intention_Score, 
+                        color = factor(Class_Level))) +
+  geom_boxplot()
+```
+
+Similarly there is a fairly clear correlation between increasing Class_Level and increasing Intention_Score.
+
+```{r}
+ggplot(french_data, aes(Screen_Time, Intention_Score)) +
+  geom_point(na.rm=TRUE)
+```
 
 ## Tables
 
@@ -85,6 +212,12 @@ ggplot(french_data, aes(x = factor(Host_Family), y = Competence_Score, fill = fa
   labs(x = "Lived with a Host Family (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
 ```
 
+```{r}
+ggplot(french_data, aes(factor(Host_Family), Intention_Score, 
+                        color=factor(Host_Family))) +
+  geom_boxplot()
+```
+
 This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
 
 ### Plot of Interaction Score by Competence, colors are Class Level covariate
@@ -120,41 +253,41 @@ The Screen Time variable had several issues with data quality and was not signif
 -   Also our client agreed that the variable didn't make sense as is and that we should remove it.
 
 ```{r}
-competence_model2 <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
+competence_model <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
                          Host_Family + Phone_Language +
                          Phone_Keyboard + Interaction_Score + 
                          Speaking_Score + Speak_Hours_Score +
                          Use_French_Score + French_Hours_Score,
                        data = french_data)
 
-summary(competence_model2)
+summary(competence_model)
 ```
 
 ```{r}
-intention_model2 <- lm(Intention_Score ~ Year_2024 + Year_2025 + 
+intention_model <- lm(Intention_Score ~ Year_2024 + Year_2025 + 
                          Class_Level + Host_Family + 
                          Phone_Language + Phone_Keyboard +
                          Interaction_Score + Speaking_Score + Speak_Hours_Score +
                          Use_French_Score + French_Hours_Score,
                        data = french_data)
 
-summary(intention_model2)
+summary(intention_model)
 ```
 
 # Model Checking using AIC
 
 ```{r}
-stepAIC(competence_model2, method = "backward")
+stepAIC(competence_model, method = "backward")
 ```
 
 ```{r}
 # After model checking
-competence_model4 <- lm(Competence_Score ~ 
+competence_model_reduced <- lm(Competence_Score ~ 
                          Class_Level +
                          Speaking_Score,
                        data = french_data)
 
-summary(competence_model4)
+summary(competence_model_reduced)
 ```
 
 ```{r}
@@ -164,36 +297,31 @@ plot(density(french_data$Competence_Score))
 
 ```{r}
 # Residuals vs Fitted
-plot(competence_model4, which = 1)
+plot(competence_model_reduced, which = 1)
 ```
 
 Looks good, does not seem to have patterns or fan out or cluster too much. Some outliers.
 
-Checking the outliers revealed that 
-- for entry 45, the student had a higher perceived Competence score (82) than usual based on their fairly low Speaking Score (10) and Class Level (1)
-- For entry 16, the student had a lower perceived Competence score (29) than usual based on their fairly low Speaking Score (22) and Class Level (1)
-- For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
-
+Checking the outliers revealed that - for entry 45, the student had a higher perceived Competence score (82) than usual based on their fairly low Speaking Score (10) and Class Level (1) - For entry 16, the student had a lower perceived Competence score (29) than usual based on their fairly low Speaking Score (22) and Class Level (1) - For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
 
 # testing Competence Score for normality
+
 ```{r}
 # QQ Plot
-plot(competence_model4, which = 2)
+plot(competence_model_reduced, which = 2)
 ```
 
-
 ```{r}
-shapiro.test(resid(competence_model4))
+shapiro.test(resid(competence_model_reduced))
 ```
 
-
 ```{r}
-stepAIC(intention_model2, method = "backward")
+stepAIC(intention_model, method = "backward")
 ```
 
 ```{r}
 # After model checking
-intention_model4 <- lm(Intention_Score ~
+intention_model_reduced <- lm(Intention_Score ~
                             Class_Level + 
                             Host_Family + 
                             Phone_Language + 
@@ -202,7 +330,7 @@ intention_model4 <- lm(Intention_Score ~
                             Use_French_Score,
                        data = french_data)
 
-summary(intention_model4)
+summary(intention_model_reduced)
 ```
 
 ```{r}
@@ -212,30 +340,29 @@ plot(density(french_data$Intention_Score))
 
 ```{r}
 # Residuals vs Fitted 
-plot(intention_model4, which = 1)
+plot(intention_model_reduced, which = 1)
 ```
 
 once again, we should check the noted outliers
 
-- for entry 24, the student had a higher Intention score (18) than usual based on their other entries in the model
-(class level 1, did not live with a french speaking family, did not have french as a phone language, above average interaction score etc)
-- For entry 3, the student had a lower Intention score (6) than usual based on their other entries in the model
-(class level 0, did not live with a french speaking family, did not french as a phone language, above average interaction score etc )
-- For entry 47, the student had a lower Intention score (14) than usual based on their other entries in the model
-(class level 4, lived with a french speaking family, had french as a phone language, above average interaction score etc)
+-   for entry 24, the student had a higher Intention score (18) than usual based on their other entries in the model (class level 1, did not live with a french speaking family, did not have french as a phone language, above average interaction score etc)
+-   For entry 3, the student had a lower Intention score (6) than usual based on their other entries in the model (class level 0, did not live with a french speaking family, did not french as a phone language, above average interaction score etc )
+-   For entry 47, the student had a lower Intention score (14) than usual based on their other entries in the model (class level 4, lived with a french speaking family, had french as a phone language, above average interaction score etc)
 
 # checking Intention Score for normality
+
 ```{r}
 # QQ Plot
-plot(intention_model4, which = 2)
+plot(intention_model_reduced, which = 2)
 ```
+
 Looks fairly normally distributed
 
 ```{r}
-shapiro.test(resid(intention_model4))
+shapiro.test(resid(intention_model_reduced))
 ```
-pval > 0.05, we can assume normality
 
+pval \> 0.05, we can assume normality
 
 Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Intention_Score
 
