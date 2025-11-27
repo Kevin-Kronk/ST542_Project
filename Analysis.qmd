@@ -22,7 +22,7 @@ french_data
 
 # EDA
 
-### Summary Statistics
+## Summary Statistics
 
 The data has 58 observations and 14 variables that we will be analyzing. Twelve of these variables are predictors and two, Competence_Score and Intention_Score, are response variables.
 
@@ -81,11 +81,11 @@ french_data <- french_data |>
   mutate(across(all_of(binary_variables), as.factor))
 ```
 
-### Tables?
+## Tables?
 
-### Plots 
+## Plots 
 
-Year
+### Year
 
 ```{r}
 french_data <- french_data |>
@@ -118,7 +118,7 @@ ggplot(french_data, aes(Year, Intention_Score, color = Year)) +
 
 For Year vs Intention_Score, 2024 has a smaller IQR and range than 2023 and 2025, with a slightly higher average Intention_Score. Both 2023 and 2025 have very similar distributions.
 
-Class Level
+### Class Level 
 
 ```{r}
 ggplot(french_data, aes(Class_Level, fill = factor(Class_Level))) +
@@ -143,9 +143,196 @@ ggplot(french_data, aes(Class_Level, Intention_Score,
 
 Similarly there is a fairly clear correlation between increasing Class_Level and increasing Intention_Score.
 
+### Host Family
+
+```{r}
+ggplot(french_data, aes(Host_Family, fill = Host_Family)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(french_data, aes(Host_Family, Competence_Score, color = Host_Family)) +
+  geom_boxplot() +
+    geom_jitter(width=0.2)
+```
+
+```{r}
+ggplot(french_data, aes(Host_Family, Intention_Score, color = Host_Family)) +
+  geom_boxplot()
+```
+
+### Phone Language
+
+```{r}
+ggplot(french_data, aes(Phone_Language, fill = Phone_Language)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(french_data, aes(Phone_Language, Competence_Score, 
+                        color = Phone_Language)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2)
+```
+
+```{r}
+ggplot(french_data, aes(Phone_Language, Intention_Score, 
+                        color = Phone_Language)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2)
+```
+
+### Phone Keyboard
+
+```{r}
+ggplot(french_data, aes(Phone_Keyboard, fill = Phone_Keyboard)) +
+  geom_bar()
+```
+
+```{r}
+ggplot(french_data, aes(Phone_Keyboard, Competence_Score, 
+                        color = Phone_Keyboard)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2)
+```
+
+```{r}
+ggplot(french_data, aes(Phone_Keyboard, Intention_Score, 
+                        color = Phone_Keyboard)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2)
+```
+
+### Screen Time
+
+```{r}
+ggplot(french_data, aes(Screen_Time)) +
+  geom_density(na.rm = TRUE)
+```
+
+```{r}
+ggplot(french_data, aes(Screen_Time, Competence_Score)) +
+  geom_point(na.rm=TRUE) +
+  geom_smooth(method = 'lm', formula = 'y ~ x', na.rm=TRUE)
+```
+
 ```{r}
 ggplot(french_data, aes(Screen_Time, Intention_Score)) +
-  geom_point(na.rm=TRUE)
+  geom_point(na.rm=TRUE) + 
+  geom_smooth(method = "lm", formula = 'y ~ x', na.rm=TRUE)
+```
+
+### Interaction Score
+
+```{r}
+ggplot(french_data, aes(Interaction_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Interaction_Score, Intention_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+### Speaking Score
+
+```{r}
+ggplot(french_data, aes(Speaking_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(Speaking_Score, Competence_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Speaking_Score, Intention_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+### Speak Hour Score
+
+```{r}
+ggplot(french_data, aes(Speak_Hours_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(Speak_Hours_Score, Competence_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Speak_Hours_Score, Intention_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+### Use French Score
+
+```{r}
+ggplot(french_data, aes(Use_French_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(Use_French_Score, Competence_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Use_French_Score, Intention_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+### French Hours Score
+
+```{r}
+ggplot(french_data, aes(French_Hours_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(French_Hours_Score, Competence_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(French_Hours_Score, Intention_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+### Competence and Intention Score
+
+```{r}
+ggplot(french_data, aes(Competence_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(Intention_Score)) +
+  geom_density()
+```
+
+```{r}
+ggplot(french_data, aes(Competence_Score, Intention_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
 ## Tables
