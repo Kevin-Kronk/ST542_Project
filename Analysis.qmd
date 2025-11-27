@@ -345,12 +345,6 @@ french_data |> group_by(Host_Family) |> summarize(n = n(), comp = sum(Competence
 
 Top row is Student dorms, and this row seems to be the majority of student living situations.
 
-### Spread of data for Full dataset
-
-```{r}
-french_data |> lapply(summary)
-```
-
 ### Average scores grouped by our Class level covariate
 
 ```{r}
@@ -397,12 +391,6 @@ ggplot(french_data, aes(x= Interaction_Score)) + geom_histogram(aes(y = after_st
 ggplot(french_data, aes(x = factor(Host_Family), y = Competence_Score, fill = factor(Class_Level))) +
   geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Greens") +
   labs(x = "Lived with a Host Family (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
-```
-
-```{r}
-ggplot(french_data, aes(factor(Host_Family), Intention_Score, 
-                        color=factor(Host_Family))) +
-  geom_boxplot()
 ```
 
 This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
