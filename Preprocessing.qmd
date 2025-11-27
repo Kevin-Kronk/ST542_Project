@@ -6,10 +6,6 @@ editor: visual
 
 ## Data Preprocessing
 
-Convert ordinal categorical data to numbers.
-
-Add up subgroups to create one column per variable.
-
 ```{r}
 # Load libraries
 library(tidyverse)
@@ -17,7 +13,8 @@ library(readxl)
 ```
 
 ```{r}
-french_post_survey <- read_excel("French_Post_Survey.xlsx",sheet=1,
+# Load the data, giving names to each variable
+french_post_survey <- read_excel("data/French_Post_Survey.xlsx",sheet=1,
                       col_names = c("Timestamp", "Email", "Changed_Major",
                                    "Changed_Minor", "Masters", "Feelings",
                                    "Feelings_Factors", "Class_Level", 
@@ -54,15 +51,13 @@ french_post_survey <- read_excel("French_Post_Survey.xlsx",sheet=1,
                                    "Extra2", "Extra3"),
                       skip = 1)
 
-# The last 9 values were from extra work, not survey responses
-french_post_survey <- french_post_survey[1:61,]
 french_post_survey
 ```
 
 ```{r}
-# Subsetting Columns We Will Use In Our Analysis
+# Subsetting columns we will use in our analysis
 french_data <- french_post_survey |>
-  select("Timestamp", "Class_Level", "Living_Arrangement", "LA_a2", "LA_b1",
+  select("Timestamp", "Class_Level", "Living_Arrangement",
          "Phone_Language", "Phone_Keyboard", "Screen_Time", "Interact1", "Interact2",
          "Interact3", "Interact4", "Interact5", "Interact6", "Interact7", "Interact8",
          "Interact9", "Interact10", "Speaking1", "Speaking2", "Speaking3", 
@@ -85,16 +80,29 @@ french_data
 The Screen Time variable has been calculated in another excel file and needs to be added to this dataset.
 
 ```{r}
-screen_time_data <- read_excel("ScreenTimeDat.xlsx")
+screen_time_data <- read_excel("data/Screen_Time_Data.xlsx", sheet=1,
+                               col_names = c("Timestamp", "Email_Address",
+                                             "Screen_Time", "ScreenTimeWk1",
+                                             "ScreenTimeWk2", "ScreenTimeWk3",
+                                             "ScreenTimeWk4", "AvgScreenTime"),
+                               skip = 1)
 
 french_data$Screen_Time <- screen_time_data$AvgScreenTime
 
 french_data
 ```
 
-In the class level variable there are some FLF 201 - Intermediate French 1 and FLF 202 - Intermediate French 2. These two however are incorrectly entered data, so these values will have to be removed before we begin processing the rest of the data.
+In the class level variable there are some FLF 201 - Intermediate French 1 and FLF 202 - Intermediate French 2 entries. These are incorrectly entered data, so these values will have to be removed before we begin processing the rest of the data.
 
 ```{r}
+# All Class Level entries and their counts
+french_data |>
+  group_by(Class_Level) |>
+  summarize(count = n())
+```
+
+```{r}
+# Removing Class Levels with values FLF 201 or 202
 french_data <- french_data |>
   filter(Class_Level != "FLF 201",
          Class_Level != "FLF 202")
@@ -103,147 +111,118 @@ french_data
 ```
 
 ```{r}
+# Showing the updated Class Level entries
 french_data |>
   group_by(Class_Level) |>
   summarize(count = n())
 ```
 
-### Response Variables
+### Year
 
-Reading, Writing, Listening, and Speaking French Perceived Skill. Intention to continue learning French in some capacity.
+The Timestamp variable needs to be converted to just the year. Year is being treated as categorical with two binary variables, one for 2024 and the other 2025. If both are 0, then we have 2023.
 
 ```{r}
+# Convert the Timestamp variable to a Year
+french_data <- french_data |>
+  mutate(Year = year(Timestamp),
+         Year_2024 = if_else(Year == 2024, 1, 0),
+         Year_2025 = if_else(Year == 2025, 1, 0)) |>
+  select(Year_2024, Year_2025, everything(), -Timestamp, -Year)
+
+french_data
+```
+
+```{r}
+# Looking at the number of observations with the year 2024
 french_data |>
-  group_by(Read_French2) |>
+  group_by(Year_2024) |>
   summarize(count = n())
 ```
 
-This is typical ordinal categorical data. Need to convert it to a 1 to 5 scale.
-
 ```{r}
-# To convert ordinal categorical values to numbers
-ordinal_dict <- c("Not sure" = 1,
-                  "Somewhat sure" = 2,
-                  "Moderately sure" = 3,
-                  "Very sure" = 4, 
-                  "Completely sure" = 5)
-
-ordinal_columns <- c("Read_French1", "Read_French2", "Read_French3",
-                     "Read_French4", "Read_French5", "Write_French1",
-                     "Write_French2", "Write_French3", "Write_French4",
-                     "Write_French5", "Listen_French1", "Listen_French2",
-                     "Listen_French3", "Listen_French4", "Listen_French5",
-                     "Speak_French1", "Speak_French2", "Speak_French3",
-                     "Speak_French4", "Speak_French5", "Continue_French1",
-                     "Continue_French2", "Continue_French3", "Continue_French4",
-                     "Continue_French5")
-
-convert_ordinal <- function(col) {
-  return(ordinal_dict[col])
-}
-```
-
-```{r}
-# How to convert ordinal categorical data to numerical
-french_data <- french_data |>
-  mutate(across(all_of(ordinal_columns), convert_ordinal))
-
-french_data
-```
-
-### Hours Speaking or Using French
-
-```{r}
-# Lets look at another type of ordinal column
+# Looking at the number of observations with the year 2025
 french_data |>
-  group_by(Speak_Hours1) |>
+  group_by(Year_2025) |>
+  summarize(count = n())
+```
+
+### Class Level
+
+Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, to C1 - Advanced. Therefore these are ordinal categorical variables that should be converted to numberical from 0 to 4 in that order.
+
+```{r}
+# Look at counts of each Class Level
+french_data |>
+  group_by(Class_Level) |>
   summarize(count = n())
 ```
 
 ```{r}
-# To convert ordinal categorical hour values to numbers
-ordinal_hours_dict <- c("0-1" = 0,
-                        "1-2" = 1,
-                        "2-3" = 2,
-                        "3-4" = 3, 
-                        "4-5" = 4,
-                        "5+" = 5)
+# Create function to convert the ordinal categorical Class Level to numerical
+class_level_dict <- c("Summer Study Abroad A1-level language class" = 0,
+                      "Summer Study Abroad A2-level language class" = 1,
+                      "Summer Study Abroad B1-level language class" = 2,
+                      "Summer Study Abroad B2-level language class" = 3,
+                      "Summer Study Abroad C1-level language class" = 4)
 
-ordinal_hours_columns <- c("Speak_Hours1", "Speak_Hours2","Speak_Hours3",
-                           "Speak_Hours4", "Speak_Hours5", "French_Hours1",
-                           "French_Hours2", "French_Hours3", "French_Hours4")
+class_level_column <- c("Class_Level")
 
-convert_ordinal_hours <- function(col) {
-  return(ordinal_hours_dict[col])
+convert_class_level <- function(col) {
+  return(class_level_dict[col])
 }
 ```
 
 ```{r}
-# How to convert ordinal categorical data to numerical
+# Convert the Class Level variable
 french_data <- french_data |>
-  mutate(across(all_of(ordinal_hours_columns), convert_ordinal_hours))
+  mutate(across(all_of(class_level_column), convert_class_level)) |>
+  select(Year_2024, Year_2025, Class_Level, everything())
 
 french_data
 ```
 
-### Interaction With French People Frequency
+### Living Arrangement
+
+The Living Arrangement variable will be grouped to represent whether or not the student lived with a host family. There were several follow up questions based on this variable, which were stored in the variables: LA_a1, LA_a2, LA_a3, LA_a4, LA_b1, LA_b2, LA_b3. However, due to the limited nature of the observations of data, subdividing the students among these groups creates subgroups that are too small to analyze.
 
 ```{r}
-# Lets look at another type of ordinal column
-interact<- french_data |>
-  group_by(Interact10) |>
+# Show the number of observations of each type of Living Arrangement
+french_data |>
+  group_by(Living_Arrangement) |>
   summarize(count = n())
-
-interact$Interact10
 ```
 
 ```{r}
-# To convert ordinal categorical interaction values to numbers
-ordinal_interact_dict <- c("not available" = 1,
-                           "never" = 2,
-                           "rarely (<1 times/week)" = 3,
-                           "occasionally (1-2 times/week)" = 4, 
-                           "frequently (3-5 times/week)" = 5)
-
-ordinal_interact_columns <- c("Interact1", "Interact2", "Interact3", 
-                              "Interact4", "Interact5", "Interact6",
-                              "Interact7", "Interact8", "Interact9",
-                              "Interact10")
-
-convert_ordinal_interact <- function(col) {
-  return(ordinal_interact_dict[col])
-}
-```
-
-```{r}
-# How to convert ordinal categorical data to numerical
+# Living with a host family will be represented as 1
 french_data <- french_data |>
-  mutate(across(all_of(ordinal_interact_columns), convert_ordinal_interact))
+  mutate(Host_Family = if_else(startsWith(Living_Arrangement, "a"),
+                               1, 0)) |>
+  select(Year_2024, Year_2025, Class_Level, Host_Family, everything(), 
+         -Living_Arrangement)
 
 french_data
 ```
 
-### Language on Phone and Keyboard Language on Phone
+### Phone Language and Phone Keyboard
 
-"Phone_Language", "Phone_Keyboard" We may or may not use these.
+Both variables will be converted to represent whether or not the students used French on their phone. This will be a binary variable.
 
 ```{r}
-# Lets look at the values in Language on Phone and Keyboard Language on Phone
+# Lets look at the values in Phone Language
 french_data |>
   group_by(Phone_Language) |>
   summarize(count = n())
 ```
 
 ```{r}
+# Lets look at the values in Phone Keyboard
 french_data |>
   group_by(Phone_Keyboard) |>
   summarize(count = n())
 ```
 
-Looks like the general trend for both of these columns is that students either did or did not use French on their phone. We can convert these into binary variables based on this.
-
 ```{r}
-# Convert to binary where 0 represents no French on phone, and 1 represents French on phone
+# Convert both Phone variables to binary with 0 being no French, and 1 French
 binary_phone_dict <- c("English" = 0,
                        "English, French" = 1,
                        "English, French, German" = 1,
@@ -266,7 +245,7 @@ convert_binary_phone <- function(col) {
 ```
 
 ```{r}
-# Convert the phone variables to binary
+# Convert the Phone variables
 french_data <- french_data |>
   mutate(across(all_of(binary_phone_columns), convert_binary_phone))
 
@@ -274,115 +253,142 @@ french_data
 ```
 
 ```{r}
+# Relook at the Phone Language variable counts
 french_data |>
   group_by(Phone_Language) |>
   summarize(count = n())
 ```
 
 ```{r}
+# Relook at the Phone Keyboard variable counts
 french_data |>
   group_by(Phone_Keyboard) |>
   summarize(count = n())
 ```
 
-### Living Arrangements
+### Interaction With French People Frequency
 
-"Living_Arrangement" Has it's own encoding.
-
-LA_a1, LA_a2, LA_a3, LA_a4, LA_b1, LA_b2, LA_b3 are all follow up questions based on the Living_Arrangement variable. However, due to the limited nature of the observations of data, subdividing the students among these groups creates too small of subgroups. So we will simply divide the students into those who lived with a host family and those who lived in student housing.
+These variables all represent how frequently students interact with French people in different contexts. They are from "not available" to "frequently", so they are ordinal categorical data.
 
 ```{r}
+# Looking at the values in one of the Interaction variables
 french_data |>
-  group_by(Living_Arrangement) |>
+  group_by(Interact10) |>
   summarize(count = n())
 ```
 
 ```{r}
-french_data <- french_data |>
-  mutate(Host_Family = if_else(startsWith(Living_Arrangement, "a"),
-                        1, 0)) |>
-  select(Timestamp, Class_Level, Host_Family, everything(), 
-         -Living_Arrangement, -LA_a2, -LA_b1)
+# Function to convert ordinal categorical Interact variables to numerical
+ordinal_interact_dict <- c("not available" = 0,
+                           "never" = 1,
+                           "rarely (<1 times/week)" = 2,
+                           "occasionally (1-2 times/week)" = 3, 
+                           "frequently (3-5 times/week)" = 4)
 
-french_data
-```
+ordinal_interact_columns <- c("Interact1", "Interact2", "Interact3", 
+                              "Interact4", "Interact5", "Interact6",
+                              "Interact7", "Interact8", "Interact9",
+                              "Interact10")
 
-```{r}
-french_data |>
-  group_by(Host_Family) |>
-  summarize(count = n())
-```
-
-### Class Level
-
-"Class_Level" Need to make sure we know which is the highest.
-
-Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, C1 - Advanced, C2 - Mastery.
-
-```{r}
-french_data |>
-  group_by(Class_Level) |>
-  summarize(count = n())
-```
-
-```{r}
-# Convert ordinal Class Level
-class_level_dict <- c("Summer Study Abroad A1-level language class" = 0,
-                      "Summer Study Abroad A2-level language class" = 1,
-                      "Summer Study Abroad B1-level language class" = 2,
-                      "Summer Study Abroad B2-level language class" = 3,
-                      "Summer Study Abroad C1-level language class" = 4)
-
-
-class_level_column <- c("Class_Level")
-
-convert_class_level <- function(col) {
-  return(class_level_dict[col])
+convert_ordinal_interact <- function(col) {
+  return(ordinal_interact_dict[col])
 }
 ```
 
 ```{r}
-# Convert the class level variable
+# Conert the Interact variables
 french_data <- french_data |>
-  mutate(across(all_of(class_level_column), convert_class_level))
+  mutate(across(all_of(ordinal_interact_columns), convert_ordinal_interact))
 
 french_data
 ```
 
-### Year
+### Hours Speaking or Using French
 
-"Timestamp" Need to convert to just the year.
-
-Year is being treated as categorical with two binary variables one for 2024 and the other 2025, in which case if both are 0, then we have 2023.
+These variables represent the number of hours per day a student spoke French or used French in different contexts. They range from "0-1" to "5+", so they are all ordinal categorical variables.
 
 ```{r}
-# Convert the class level variable
+# Look at the values in one of the Speak Hours variables
+# These will be the same as in the French Hours variables
+french_data |>
+  group_by(Speak_Hours1) |>
+  summarize(count = n())
+```
+
+```{r}
+# Function to convert ordinal categorical Hour variables to numerical
+ordinal_hours_dict <- c("0-1" = 0,
+                        "1-2" = 1,
+                        "2-3" = 2,
+                        "3-4" = 3, 
+                        "4-5" = 4,
+                        "5+" = 5)
+
+ordinal_hours_columns <- c("Speak_Hours1", "Speak_Hours2","Speak_Hours3",
+                           "Speak_Hours4", "Speak_Hours5", "French_Hours1",
+                           "French_Hours2", "French_Hours3", "French_Hours4")
+
+convert_ordinal_hours <- function(col) {
+  return(ordinal_hours_dict[col])
+}
+```
+
+```{r}
+# Convert Speak Hours and French Hours variables
 french_data <- french_data |>
-  mutate(Year = year(Timestamp),
-         Year_2024 = if_else(Year == 2024, 1, 0),
-         Year_2025 = if_else(Year == 2025, 1, 0)) |>
-  select(Year_2024, Year_2025, everything(), -Timestamp, -Year)
+  mutate(across(all_of(ordinal_hours_columns), convert_ordinal_hours))
 
 french_data
 ```
 
+### Response Variables
+
+There are variables that represent a students Perceived Skill in Reading, Writing, Listening, and Speaking in French in different contexts. There are also variables that represent a students Intention to Continue learning French through different means. These all range from "Not sure" to "Completely sure", therefore they are ordinal categorical variables.
+
 ```{r}
+# Look at the values in one of the Read French variables
 french_data |>
-  group_by(Year_2024) |>
+  group_by(Read_French2) |>
   summarize(count = n())
 ```
 
 ```{r}
-french_data |>
-  group_by(Year_2025) |>
-  summarize(count = n())
+# Function to convert ordinal categorical Response variables to numberical
+ordinal_dict <- c("Not sure" = 0,
+                  "Somewhat sure" = 1,
+                  "Moderately sure" = 2,
+                  "Very sure" = 3, 
+                  "Completely sure" = 4)
+
+ordinal_columns <- c("Read_French1", "Read_French2", "Read_French3",
+                     "Read_French4", "Read_French5", "Write_French1",
+                     "Write_French2", "Write_French3", "Write_French4",
+                     "Write_French5", "Listen_French1", "Listen_French2",
+                     "Listen_French3", "Listen_French4", "Listen_French5",
+                     "Speak_French1", "Speak_French2", "Speak_French3",
+                     "Speak_French4", "Speak_French5", "Continue_French1",
+                     "Continue_French2", "Continue_French3", "Continue_French4",
+                     "Continue_French5")
+
+convert_ordinal <- function(col) {
+  return(ordinal_dict[col])
+}
+```
+
+```{r}
+# Convert Response variables
+french_data <- french_data |>
+  mutate(across(all_of(ordinal_columns), convert_ordinal))
+
+french_data
 ```
 
 ### Scores
 
-Might make sense to still look at the Read, Write, Listen, and Speak scores individually so I included them.
+Several variables are referring to the same idea with the same scale, but across many different contexts. It makes sense to add these together to create a single score that represent the overall amount. These scores can then effectively be treated as continuous numerical variables.
 
 ```{r}
+# Add across each category of the variables to create a score
 french_data <- french_data |>
   mutate(Interaction_Score = rowSums(across(starts_with("Interact"))),
          Speaking_Score = rowSums(across(starts_with("Speaking"))),
@@ -410,5 +416,6 @@ french_data
 ### Final Export
 
 ```{r}
-write_csv(french_data, "processed_french_data.csv")
+# Create csv file of the Processed French Data
+write_csv(french_data, "data/Processed_French_Data.csv")
 ```
