@@ -7,6 +7,7 @@ editor: visual
 ```{r}
 library(ggplot2)
 library(MASS)
+library(dplyr)
 ```
 
 # Load Data
@@ -174,11 +175,17 @@ Checking the outliers revealed that
 - For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
 
 
+# testing Competence Score for normality
 ```{r}
-# QQ Plot - This is still probably fine and the assumption is still met
-# Though the far left two points may be outliers
+# QQ Plot
 plot(competence_model4, which = 2)
 ```
+
+
+```{r}
+shapiro.test(resid(competence_model4))
+```
+
 
 ```{r}
 stepAIC(intention_model2, method = "backward")
@@ -217,10 +224,18 @@ once again, we should check the noted outliers
 - For entry 47, the student had a lower Intention score (14) than usual based on their other entries in the model
 (class level 4, lived with a french speaking family, had french as a phone language, above average interaction score etc)
 
+# checking Intention Score for normality
 ```{r}
 # QQ Plot
 plot(intention_model4, which = 2)
 ```
+Looks fairly normally distributed
+
+```{r}
+shapiro.test(resid(intention_model4))
+```
+pval > 0.05, we can assume normality
+
 
 Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Intention_Score
 
@@ -234,7 +249,7 @@ ggplot(french_data, aes(Competence_Score, Intention_Score)) +
 
 ```{r}
 french_data |>
-  select(everything(), -Screen_Time) |>
+  dplyr::select(everything(), -Screen_Time) |>
   cor(use = "complete.obs")
 ```
 

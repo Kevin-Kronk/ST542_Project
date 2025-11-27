@@ -94,3 +94,35 @@ plot(intention_model_cd2, which = 2)
 ```
 
 
+## Normality was violated for Competence Score
+```{r}
+Trans_comp <- (french_data$Competence_Score)^2
+
+competence_model5 <- lm(Trans_comp ~ 
+                         Class_Level +
+                         Speaking_Score,
+                       data = french_data)
+
+summary(competence_model5)
+```
+
+```{r}
+plot(density(Trans_comp))
+```
+
+```{r}
+plot(competence_model5, which = 2)
+```
+
+
+```{r}
+shapiro.test(resid(competence_model5))
+```
+pvalue > 0.05
+
+residuals are now normal, just heavy-tailed.
+
+```{r}
+plot(competence_model5, which = 1)
+```
+This plot looks about the same as the not-transformed one. 
