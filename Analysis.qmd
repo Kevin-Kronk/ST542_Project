@@ -601,23 +601,41 @@ vif(intention_model)
 
 Similar to above, none of the VIFs were above 5, therefore the model fit is likely not being affected by multicollinearity.
 
-## Feature Selection using AIC and P-Values
+## Feature Selection using BIC
+
+BIC is the Bayesian Information Criterion which can be used to select which model is fitting the data better based on which has the lowest BIC. It has a stronger penalty for models with more parameters. The equation is BIC = -2\*ln(Likelihood) + k\*ln(n), where k is the number of parameters in the model and n is the number of observations in the dataset. We decided to use BIC because we wanted to obtain a more parsimonious model. The feature selection method uses a backward elimination approach which removes one variable at a time and chooses the model that reduced the BIC the most.
 
 ## Competence Model
 
 ```{r}
-competence_model_reduced <- step(competence_model, method = "backward")
+# Feature selection using backwards elimation and BIC
+# k is what defines the model the be BIC even though the output says AIC
+competence_model_reduced <- step(competence_model, method = "backward",
+                                 k = log(nrow(competence_model$model)))
 summary(competence_model_reduced)
 ```
 
-Using backward elimination based on AIC, we get a final reduced model with Class_Level, Interaction_Score, and Speaking_Score. Interaction_Score was not statistically significant at a significance level of 0.05, however removing it does not reduce the AIC and it causes the Shapiro-Wilks normality test to reject normality. Therefore, Interaction_Score was kept in the final model.
+Using backward elimination based on BIC, we get a final reduced model with Class_Level and Speaking_Score. However, this model rejected normality of the residuals in the Shapiro-Wilks test, which means the model assumptions were not met and the model was not valid. The BIC difference between the final model and the one above it was only 1.12, which is very small. Therefore we chose to use the model with Interaction_Score.
+
+```{r}
+# Reverting to the second best BIC model to meet model assumptions
+competence_model_reduced <- lm(Competence_Score ~
+                                Class_Level + 
+                                Interaction_Score +
+                                Speaking_Score,
+                              data = french_data)
+
+summary(competence_model_reduced)
+```
+
+In this model the Class_Level and Speaking_Score variables are statistically significant at a significance level of 0.05. Even though the Interaction_Score is not statistically significant at a significance level of 0.05, including it in the model allows the model to meet model assumptions.
 
 ```{r}
 # Residuals vs Fitted
 plot(competence_model_reduced, which = 1)
 ```
 
-Looks good, does not seem to have patterns or fan out or cluster too much. Some outliers.
+Generally the residuals are spread out evenly across the fitted values, showing that there is roughly equal variance of the residuals. However, the three outliers identified by the plot are observations 16, 19, and 49.
 
 Checking the outliers revealed that - for entry 45, the student had a higher perceived Competence score (82) than usual based on their fairly low Speaking Score (10) and Class Level (1) - For entry 16, the student had a lower perceived Competence score (29) than usual based on their fairly low Speaking Score (22) and Class Level (1) - For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
 
@@ -626,39 +644,39 @@ Checking the outliers revealed that - for entry 45, the student had a higher per
 plot(competence_model_reduced, which = 2)
 ```
 
+The standardized residuals only slightly deviate from the theoretical normal quantiles at the ends, indicating that the residuals are likely normally distributed.
+
 ```{r}
 shapiro.test(resid(competence_model_reduced))
 ```
 
-The Shapiro-Wilk test tests the null hypothesis that a sample comes from a normally distributed population.
+The Shapiro-Wilk test tests the null hypothesis that a sample comes from a normally distributed population. With a p-value of 0.1359, this model fails to reject the null hypothesis at a significance level of 0.05. Therefore, there is evidence to support that the sample does come from a normally distributed population.
 
 ```{r}
 # Once again we can check for multicollinearity
 vif(competence_model_reduced)
 ```
 
+All of the VIFs are very low which indicates that there is very little multicollinearity.
+
 ## Intention Model
 
 ```{r}
-intention_model_reduced <- step(intention_model, method = "backward")
+# Feature selection using backwards elimation and BIC
+# k is what defines the model the be BIC even though the output says AIC
+intention_model_reduced <- step(intention_model, method = "backwards",
+                                k = log(nrow(competence_model$model)))
 summary(intention_model_reduced)
 ```
 
-```{r}
-# After model checking
-intention_model_reduced <- lm(Intention_Score ~
-                                Class_Level + 
-                                Phone_Language + 
-                                Interaction_Score,
-                              data = french_data)
-
-summary(intention_model_reduced)
-```
+The final reduced model included Class_Level, Phone_Language, and Interaction_Score. All of these variables are statistically significant at a significance level of 0.05.
 
 ```{r}
 # Residuals vs Fitted 
 plot(intention_model_reduced, which = 1)
 ```
+
+The residuals appear to be roughly evenly spaced across the fitted values, indicating there is equal variance of the residuals. The three outliers identified by the plot are observations 3, 22, and 35.
 
 once again, we should check the noted outliers
 
@@ -671,17 +689,17 @@ once again, we should check the noted outliers
 plot(intention_model_reduced, which = 2)
 ```
 
-Looks fairly normally distributed
+The standardized residuals appear to align roughly with the theoretical normal quantiles, indicating that the residuals are normally distributed.
 
 ```{r}
 shapiro.test(resid(intention_model_reduced))
 ```
 
-pval \> 0.05, we can assume normality
-
-Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Intention_Score
+With a p-value of 0.1943, this model fails to reject the null hypothesis at a significance level of 0.05. Therefore, there is evidence to support that the sample does come from a normally distributed population.
 
 ```{r}
 # Once again we can check for multicollinearity
 vif(intention_model_reduced)
 ```
+
+All of the VIFs are very low which indicates that there is very little multicollinearity.
