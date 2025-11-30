@@ -8,6 +8,7 @@ editor: visual
 # Load libraries
 library(MASS)
 library(tidyverse)
+library(car)
 ```
 
 # Load Data
@@ -31,7 +32,7 @@ The data has 58 observations and 14 variables that we will be analyzing. Twelve 
 colSums(is.na(french_data))
 ```
 
-The Screen_Time variable has 31 missing values. If we were to create a model using Screen_Time we would have to remove all of those observations, despite the fact that they are not missing in the other variables because a linear regression model cannot handle missing values.
+The Screen_Time variable has 31 missing values. If we were to create a model using Screen_Time we would have to remove all of these observations, despite the fact that they are not missing in the other variables because a linear regression model cannot handle missing values.
 
 Basic Summary Statistics for continuous variables
 
@@ -77,13 +78,15 @@ Year_2024, Year_2025, Host_Family, and Phone_Language all have more 0 (no) entri
 Convert binary variables to factor.
 
 ```{r}
+# Save original numeric data for calculating correlations
+french_data_corr <- french_data
+
+# Convert binary variables to factor
 french_data <- french_data |>
   mutate(across(all_of(binary_variables), as.factor))
 ```
 
-## Tables?
-
-## Plots 
+## Plots
 
 ### Year
 
@@ -102,23 +105,32 @@ ggplot(french_data, aes(Year, fill = Year)) +
   geom_bar()
 ```
 
-There's a difference in the number of students per year, but no clear pattern.
+There's a difference in the number of students per year, but no clear pattern. 2023 has the most, then 2025, and finally 2024.
 
 ```{r}
 ggplot(french_data, aes(Year, Competence_Score, color = Year)) +
   geom_boxplot()
 ```
 
-For Year compared to Competence_Score, there doesn't seem to be any major difference in the overall distributions of the three years. The year 2025 has a slightly higher average Competence Score than 2023 or 2024.
+For Year compared to Competence_Score, there doesn't seem to be any major difference in the overall distributions of the three years. The year 2025 has a higher average Competence Score than 2023 or 2024.
 
 ```{r}
 ggplot(french_data, aes(Year, Intention_Score, color = Year)) +
   geom_boxplot()
 ```
 
-For Year vs Intention_Score, 2024 has a smaller IQR and range than 2023 and 2025, with a slightly higher average Intention_Score. Both 2023 and 2025 have very similar distributions.
+For Year vs Intention_Score, 2024 has a smaller IQR and range than 2023 and 2025, as well as a slightly higher average Intention_Score. Both 2023 and 2025 have very similar distributions.
 
-### Class Level 
+### Class Level
+
+```{r}
+french_data |> 
+  group_by(Class_Level) |> 
+  summarise(count=n(), avgcompscore = mean(Competence_Score), 
+            avgintscore = mean(Intention_Score), .groups = "drop")
+```
+
+Seems as though by class level, with 4 being the most difficult, competence scores do increase as one would expect.
 
 ```{r}
 ggplot(french_data, aes(Class_Level, fill = factor(Class_Level))) +
@@ -141,9 +153,18 @@ ggplot(french_data, aes(Class_Level, Intention_Score,
   geom_boxplot()
 ```
 
-Similarly there is a fairly clear correlation between increasing Class_Level and increasing Intention_Score.
+Similarly there is a fairly clear correlation between increasing Class_Level and increasing Intention_Score on average.
 
 ### Host Family
+
+```{r}
+french_data |> 
+  group_by(Host_Family) |> 
+  summarize(n = n(), comp = sum(Competence_Score)) |> 
+  mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
+```
+
+Top row is Student housing, and this row seems to be the majority of student living situations.
 
 ```{r}
 ggplot(french_data, aes(Host_Family, fill = Host_Family)) +
@@ -151,15 +172,33 @@ ggplot(french_data, aes(Host_Family, fill = Host_Family)) +
 ```
 
 ```{r}
+ggplot(french_data, aes(x = Host_Family, y = Competence_Score, 
+                        fill = factor(Class_Level))) +
+  geom_bar(stat = "summary", fun = "mean") + 
+  scale_fill_brewer(palette = "Greens") +
+  labs(x = "Lived with a Host Family (0 = No, 1 = Yes)", 
+       y = "Total Competence Score") + 
+  theme_classic()
+```
+
+This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
+
+(This is a weird plot to me because you're looking at the total competence across two groups, but the groups have different numbers of students in them. I guess it's interesting that students in class level 4 are only living with a host family.)
+
+```{r}
 ggplot(french_data, aes(Host_Family, Competence_Score, color = Host_Family)) +
   geom_boxplot() +
     geom_jitter(width=0.2)
 ```
 
+On average the students who lived with a host family had a slightly higher competence score.
+
 ```{r}
 ggplot(french_data, aes(Host_Family, Intention_Score, color = Host_Family)) +
   geom_boxplot()
 ```
+
+Similarly, on average the students who lived with a host family had a slightly higher intention score.
 
 ### Phone Language
 
@@ -168,12 +207,16 @@ ggplot(french_data, aes(Phone_Language, fill = Phone_Language)) +
   geom_bar()
 ```
 
+Slightly more students did not have French as a language on their phone.
+
 ```{r}
 ggplot(french_data, aes(Phone_Language, Competence_Score, 
                         color = Phone_Language)) +
   geom_boxplot() +
   geom_jitter(width = 0.2)
 ```
+
+The students who did have French as a language on their phone had a higher competence score on average.
 
 ```{r}
 ggplot(french_data, aes(Phone_Language, Intention_Score, 
@@ -182,12 +225,16 @@ ggplot(french_data, aes(Phone_Language, Intention_Score,
   geom_jitter(width = 0.2)
 ```
 
+Similarly, the students who did have French as a language on their phone had a higher intention score on average.
+
 ### Phone Keyboard
 
 ```{r}
 ggplot(french_data, aes(Phone_Keyboard, fill = Phone_Keyboard)) +
   geom_bar()
 ```
+
+There are far more students who have a French keyboard on their phone.
 
 ```{r}
 ggplot(french_data, aes(Phone_Keyboard, Competence_Score, 
@@ -196,6 +243,8 @@ ggplot(french_data, aes(Phone_Keyboard, Competence_Score,
   geom_jitter(width = 0.2)
 ```
 
+While the IQR and range are wider for the French keyboard group as you might expect from having more data, the mean competence score for both groups are about the same.
+
 ```{r}
 ggplot(french_data, aes(Phone_Keyboard, Intention_Score, 
                         color = Phone_Keyboard)) +
@@ -203,12 +252,27 @@ ggplot(french_data, aes(Phone_Keyboard, Intention_Score,
   geom_jitter(width = 0.2)
 ```
 
+The mean intention score for the French keyboard group is much higher than the group that didn't use a French keyboard.
+
 ### Screen Time
 
 ```{r}
 ggplot(french_data, aes(Screen_Time)) +
-  geom_density(na.rm = TRUE)
+  geom_density(na.rm = TRUE) + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Screen_Time, na.rm=TRUE), 
+                            sd = sd(french_data$Screen_Time, na.rm=TRUE)),
+                color = "red")
 ```
+
+It looks like Screen_Time may have a left skewed distribution with a higher mean than median. It's also possible that the distribution is bimodal which may indicate that students are answering the question in different ways.
+
+```{r}
+ggplot(french_data, aes(x= Screen_Time)) + 
+  geom_boxplot(fill = "orchid", na.rm = TRUE)
+```
+
+The boxplot makes it more clear that the reason for the higher mean compared to the median may be due to a few outliers on the far right.
 
 ```{r}
 ggplot(french_data, aes(Screen_Time, Competence_Score)) +
@@ -216,18 +280,38 @@ ggplot(french_data, aes(Screen_Time, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x', na.rm=TRUE)
 ```
 
+A perfectly flat model is possible in the 95% confidence bands, which indicates there may be no linear relationship between Screen_Time and Competence_Score.
+
+```{r}
+ggplot(french_data, aes(x = Screen_Time, y = Competence_Score, 
+                        color = factor(Class_Level), 
+                        shape = factor(Class_Level) )) + 
+  geom_point(na.rm = TRUE)
+```
+
+Similar results as those above - no clear linear trend.
+
 ```{r}
 ggplot(french_data, aes(Screen_Time, Intention_Score)) +
   geom_point(na.rm=TRUE) + 
   geom_smooth(method = "lm", formula = 'y ~ x', na.rm=TRUE)
 ```
 
+Once again, a perfectly flat line is possible in the 95% confidence bands, which indicates that there may not be a linear relationship between Screen_Time and Intention_Score.
+
+Due to the missing values, bimodal nature of the distribution, along with the outliers and the potential for there being no linear relationship with Competence_Score and Intention_Score, it seems likely that Screen_Time will be removed from the model.
+
 ### Interaction Score
 
 ```{r}
 ggplot(french_data, aes(Interaction_Score)) +
-  geom_density()
+  geom_density() + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Interaction_Score), 
+                            sd = sd(french_data$Interaction_Score)),color = "red")
 ```
+
+The Interaction_Score appears to follow the normal distribution quite well given the amount of data in the sample.
 
 ```{r}
 ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
@@ -235,18 +319,47 @@ ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+There appears to be a slight positive linear relationship between Interaction_Score and Competence_Score, however a perfectly flat line may be possible in the 95% confidence bands, which would indicate no relationship.
+
+```{r}
+ggplot(french_data, aes(x = Interaction_Score, y = Competence_Score, 
+                        color = factor(Class_Level), 
+                        shape = factor(Class_Level))) + 
+  geom_point() + 
+  labs(x = "Speaking Score", y = "Competence Score", 
+       color = "Class Level", shape = "Class Level")
+```
+
+This graph does not show a clear linear trend here
+
 ```{r}
 ggplot(french_data, aes(Interaction_Score, Intention_Score)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+This plot indicates that there is a positive linear relationship between Interaction_Score and Intention_Score.
+
+```{r}
+ggplot(french_data, aes(x = Interaction_Score, y = Intention_Score, 
+                        color = factor(Class_Level), 
+                        shape = factor(Class_Level))) + 
+  geom_point()
+```
+
+Similar here, no obvious linear trend
+
 ### Speaking Score
 
 ```{r}
 ggplot(french_data, aes(Speaking_Score)) +
-  geom_density()
+  geom_density() + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Speaking_Score), 
+                            sd = sd(french_data$Speaking_Score)),color = "red")
 ```
+
+Given the amount of data in the sample, Speaking_Score is roughly following a normal distribution, however it's possible that it deviates slightly. From the summary statistics above, the mean and median are very close to one another.
 
 ```{r}
 ggplot(french_data, aes(Speaking_Score, Competence_Score)) +
@@ -254,18 +367,27 @@ ggplot(french_data, aes(Speaking_Score, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+There appears to be a positive linear relationship between Speaking_Score and Competence_Score.
+
 ```{r}
 ggplot(french_data, aes(Speaking_Score, Intention_Score)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+There also appears to be a positive linear relationship between Speaking_Score and Intention_Score, but it's possible that a flat line is within the 95% confidence bands which would indicate no relationship.
+
 ### Speak Hour Score
 
 ```{r}
 ggplot(french_data, aes(Speak_Hours_Score)) +
-  geom_density()
+  geom_density() + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Speak_Hours_Score), 
+                            sd = sd(french_data$Speak_Hours_Score)),color = "red")
 ```
+
+The Speak_Hours_Score appears to be left skewed and from the summary statistics it has a much higher mean than median.
 
 ```{r}
 ggplot(french_data, aes(Speak_Hours_Score, Competence_Score)) +
@@ -273,18 +395,27 @@ ggplot(french_data, aes(Speak_Hours_Score, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+There is a positive linear relationship between Speak_Hours_Score and Competence_Score.
+
 ```{r}
 ggplot(french_data, aes(Speak_Hours_Score, Intention_Score)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+Similarly, there is a positive linear relationship between Speak_Hours_Score and Intention_Score.
+
 ### Use French Score
 
 ```{r}
 ggplot(french_data, aes(Use_French_Score)) +
-  geom_density()
+  geom_density() + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Use_French_Score), 
+                            sd = sd(french_data$Use_French_Score)),color = "red")
 ```
+
+The density shows that Use_French_Score may be slightly left skewed, which is backed up by the summary statistics which show that the mean is higher than the median. However, given the relatively small sample size, it's possible this is just due to variance.
 
 ```{r}
 ggplot(french_data, aes(Use_French_Score, Competence_Score)) +
@@ -292,18 +423,27 @@ ggplot(french_data, aes(Use_French_Score, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+There is a positive linear relationship between Use_French_Score and Competence_Score, however a flat line may be possible in the 95% confidence bands, which would indicate there may not be a linear relationship.
+
 ```{r}
 ggplot(french_data, aes(Use_French_Score, Intention_Score)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+A flat line between Use_French_Score and Intention_Score is possible in the 95% confidence bands, which indicates there may not be a linear relationship.
+
 ### French Hours Score
 
 ```{r}
 ggplot(french_data, aes(French_Hours_Score)) +
-  geom_density()
+  geom_density() + 
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$French_Hours_Score), 
+                            sd = sd(french_data$French_Hours_Score)),color = "red")
 ```
+
+The French_Hours_Score is left skewed which is also backed up by the summary statistics showing that it has a much higher mean than median.
 
 ```{r}
 ggplot(french_data, aes(French_Hours_Score, Competence_Score)) +
@@ -311,23 +451,37 @@ ggplot(french_data, aes(French_Hours_Score, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+A flat line is possible in the 95% confidence bands, therefore there may not be a linear relationship between French_Hours_Score and Competence_Score.
+
 ```{r}
 ggplot(french_data, aes(French_Hours_Score, Intention_Score)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
+A flat line is also possible in the 95% confidence bands here, therefore there may not be a linear relationship between French_Hours_Score and Intention_Score.
+
 ### Competence and Intention Score
 
 ```{r}
 ggplot(french_data, aes(Competence_Score)) +
-  geom_density()
+  geom_density() +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Competence_Score), 
+                            sd = sd(french_data$Competence_Score)),color = "red")
 ```
+
+Given the sample size, the Competence_Score roughly follows the normal distribution. Additionally, looking at the summary statistics, the mean and median were very close.
 
 ```{r}
 ggplot(french_data, aes(Intention_Score)) +
-  geom_density()
+  geom_density() +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(french_data$Intention_Score), 
+                            sd = sd(french_data$Intention_Score)),color = "red")
 ```
+
+Similarly, given the sample size, the Intention_Score also roughly follows a normal distribution. It's mean and median were also very close to one another.
 
 ```{r}
 ggplot(french_data, aes(Competence_Score, Intention_Score)) +
@@ -335,97 +489,57 @@ ggplot(french_data, aes(Competence_Score, Intention_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
-## Tables
+There is a very clear positive linear relationship between Competence_Score and Intention_Score.
 
-### Table of Living Arrangements and what proportion of the total n each are, as well as what proportion of the total Competence Score they are
-
-```{r}
-french_data |> group_by(Host_Family) |> summarize(n = n(), comp = sum(Competence_Score)) |> mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
-```
-
-Top row is Student dorms, and this row seems to be the majority of student living situations.
-
-### Average scores grouped by our Class level covariate
+### Correlations
 
 ```{r}
-french_data |> group_by(Class_Level) |> summarise(count=n(), avgcompscore = mean(Competence_Score), avgintscore = mean(Intention_Score), .groups = "drop")
+# Look at the correlations with Screen_Time separately since it removes NA values
+ST_corr <- french_data_corr |>
+  select(Year_2024, Year_2025, Class_Level, Host_Family, Phone_Language,
+         Phone_Keyboard, Screen_Time, Interaction_Score, Speaking_Score,
+         Speak_Hours_Score, Use_French_Score, French_Hours_Score,
+         Competence_Score, Intention_Score) |>
+  cor(use = "complete.obs") 
+
+ST_corr[,"Screen_Time"]
 ```
 
-Seems as though by class level, with 4 being the most difficult, competence scores do increase as one would expect.
-
-## Graphs of variables
-
-### Boxplot of screen time
+As can be seen, the Screen_Time variable has low correlations with all of the other variables, including weak correlations with both Competence_Score and Intention_Score. This is more evidence that Screen_Time may need to be removed from the data set.
 
 ```{r}
-ggplot(french_data, aes(x= Screen_Time)) + geom_boxplot(fill = "orchid")
+# Correlations for the rest of the data
+french_data_corr |>
+  select(Year_2024, Year_2025, Class_Level, Host_Family, Phone_Language,
+         Phone_Keyboard, Interaction_Score, Speaking_Score,
+         Speak_Hours_Score, Use_French_Score, French_Hours_Score,
+         Competence_Score, Intention_Score) |>
+  cor(use = "complete.obs")
 ```
 
-Looks to be somewhat skewed, also a couple outliers to the far right
+Correlation strength will be defined as:
 
-### Histogram of Competence Score, normal curve overlayed
+-   0 to abs(0.2) - Very weak or no association
 
-```{r}
-ggplot(french_data, aes(x= Competence_Score)) + geom_histogram(aes(y = after_stat(density)), bins = 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Competence_Score), sd = sd(french_data$Competence_Score)),color = "red")
-```
+-   abs(0.2) to abs(0.4) - Weak association
 
-Not awful, bi-modal skewed to the left a bit
+-   abs(0.4) to abs(0.6) - Moderation association
 
-### Histogram of Intention Score, normal curve overlayed
+-   abs(0.6) to abs(0.8) - Strong association
 
-```{r}
-ggplot(french_data, aes(x= Intention_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Intention_Score), sd = sd(french_data$Intention_Score)),color = "red")
-```
+-   abs(0.8) to abs(1.0) - Perfect or very strong association
 
-Multi-modal histogram, not very symmetric
+The variables with nearly zero or very weak linear correlation with Competence_Score were: Year_2024, Year_2025, Phone_Keyboard, and French_Hours_Score. The ones with weak linear correlation were: Host_Family, Interaction_Score, Speaking_Score, Speak_Hours_Score, and Use_French_Score. The variables with moderate linear correlation were: Phone_Language and Intention_Score. Finally the only variable with a strong association was Class_Level.
 
-### Histogram of Interaction Score, normal curve overlayed
+The variables with nearly zero or very weak linear correlation with Intention_Score were: Year_2024, Year_2025, Phone_Keyboard, and Use_French_Score. The variables with weak linear correlation were: Host_Family, Interaction_Score, Speaking_Score, Speak_Hours Score, and French_Hours_Score. The variables with moderate linear correlation were: Class_Level, Phone_Language, and Competence_Score.
 
-```{r}
-ggplot(french_data, aes(x= Interaction_Score)) + geom_histogram(aes(y = after_stat(density)), bins= 35) + stat_function(fun = dnorm, args = list(mean = mean(french_data$Interaction_Score), sd = sd(french_data$Interaction_Score)),color = "red")
-```
-
-### Visualizing Sum of total competence score by Living Arrangement -\> French Speaking Home
-
-```{r}
-ggplot(french_data, aes(x = factor(Host_Family), y = Competence_Score, fill = factor(Class_Level))) +
-  geom_bar(stat = "summary", fun = "mean") + scale_fill_brewer(palette = "Greens") +
-  labs(x = "Lived with a Host Family (0 = No, 1 = Yes)", y = "Total Competence Score") + theme_classic()
-```
-
-This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
-
-### Plot of Interaction Score by Competence, colors are Class Level covariate
-
-```{r}
-ggplot(french_data, aes(x = Speaking_Score, y = Competence_Score, color = factor(Class_Level), shape = factor(Class_Level))) + geom_point() + labs(x = "Speaking Score", y = "Competence Score", color = "Class Level", shape = "Class Level")
-```
-
-This graph does not show a clear linear trend here
-
-### Plot of Interaction Score by Intention, colors are Class Level covariate
-
-```{r}
-ggplot(french_data, aes(x = (Interaction_Score), y = Intention_Score, color = factor(Class_Level), shape = factor(Class_Level))) + geom_point()
-```
-
-Similar here, no obvious linear trend
-
-### Screen Time Plotted by Competence Score
-
-```{r}
-ggplot(french_data, aes(x = (Screen_Time), y = Competence_Score, color = factor(Class_Level), shape = factor(Class_Level) )) + geom_point()
-```
-
-Similar results as those above
+Speaking_Score has a strong association with Use_French_Score. Speak_Hours_Score has a strong association with Use_French_Score and a very strong association with French_Hours_Score. Finally, Use_French_Score also has a strong association with French_Hours Score. It's possible that this may cause some of these variables to have too high of multicollinearity that will affect the model fit and whether they are statistically significant.
 
 # Linear Models
 
-The Screen Time variable had several issues with data quality and was not significant in either model, therefore we decided to remove it.
+The Screen_Time variable had several issues with data quality, and along with the various details found above, our client determined that it had too many issues. Therefore, the variable was not included in the model.
 
--   Screen Time does not have statistical significance in this model. However once again Immersion Score does. We also see that the global F test does not reject either, and with an adjusted R\^2 of .27, we cannot conclude much based on this model. Especially comparing this R\^2 to the R\^2 of the model not including screen time, this model seems to perform worse.
-
--   Also our client agreed that the variable didn't make sense as is and that we should remove it.
+Might need to standardize the variables first, but for now it's probably fine
 
 ```{r}
 competence_model <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
@@ -439,6 +553,13 @@ summary(competence_model)
 ```
 
 ```{r}
+# Check the variance inflation factor 
+vif(competence_model)
+```
+
+A VIF of 1 - 5 indicates low to moderate multicollinearity, and since none of the VIFs were above 5, the model fit is likely not being affected by it.
+
+```{r}
 intention_model <- lm(Intention_Score ~ Year_2024 + Year_2025 + 
                          Class_Level + Host_Family + 
                          Phone_Language + Phone_Keyboard +
@@ -448,6 +569,13 @@ intention_model <- lm(Intention_Score ~ Year_2024 + Year_2025 +
 
 summary(intention_model)
 ```
+
+```{r}
+# Check the variance inflation factor 
+vif(intention_model)
+```
+
+Similar to above, none of the VIFs were above 5, therefore the model fit is likely not being affected by multicollinearity.
 
 # Model Checking using AIC
 
@@ -540,21 +668,3 @@ shapiro.test(resid(intention_model_reduced))
 pval \> 0.05, we can assume normality
 
 Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Intention_Score
-
-```{r}
-# Something interesting I found is that Competence and Intention have 
-# a moderately positive correlation 
-ggplot(french_data, aes(Competence_Score, Intention_Score)) +
-  geom_point() + 
-  geom_smooth(method="lm", formula = y ~ x)
-```
-
-```{r}
-french_data |>
-  dplyr::select(everything(), -Screen_Time) |>
-  cor(use = "complete.obs")
-```
-
-Ignoring the variables that are a composite of other variables, none of the variables are too highly correlated to the point that multicollinearity would be an issue. We can see that Read_French_Score, Write_French_Score, Listen_French_Score, and Speak_French_Score all have moderate to strong positive correlations with one another. Interestingly enough Competence_Score and Intention_Score almost had only positive correlations with all of the other variables, albeit many of those correlations are weak.
-
-Might need to standardize the variables first, but for now it's probably fine
