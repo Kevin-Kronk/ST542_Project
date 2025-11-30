@@ -535,6 +535,30 @@ The variables with nearly zero or very weak linear correlation with Intention_Sc
 
 Speaking_Score has a strong association with Use_French_Score. Speak_Hours_Score has a strong association with Use_French_Score and a very strong association with French_Hours_Score. Finally, Use_French_Score also has a strong association with French_Hours Score. It's possible that this may cause some of these variables to have too high of multicollinearity that will affect the model fit and whether they are statistically significant.
 
+```{r}
+ggplot(french_data, aes(Speaking_Score, Use_French_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Speak_Hours_Score, Use_French_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Speak_Hours_Score, French_Hours_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
+```{r}
+ggplot(french_data, aes(Use_French_Score, French_Hours_Score)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = 'y ~ x')
+```
+
 # Linear Models
 
 The Screen_Time variable had several issues with data quality, and along with the various details found above, our client determined that it had too many issues. Therefore, the variable was not included in the model.
@@ -577,26 +601,16 @@ vif(intention_model)
 
 Similar to above, none of the VIFs were above 5, therefore the model fit is likely not being affected by multicollinearity.
 
-# Model Checking using AIC
+## Feature Selection using AIC and P-Values
+
+## Competence Model
 
 ```{r}
-stepAIC(competence_model, method = "backward")
-```
-
-```{r}
-# After model checking
-competence_model_reduced <- lm(Competence_Score ~ 
-                         Class_Level +
-                         Speaking_Score,
-                       data = french_data)
-
+competence_model_reduced <- step(competence_model, method = "backward")
 summary(competence_model_reduced)
 ```
 
-```{r}
-# Competence Might Be slightly left skewed
-plot(density(french_data$Competence_Score))
-```
+Using backward elimination based on AIC, we get a final reduced model with Class_Level, Interaction_Score, and Speaking_Score. Interaction_Score was not statistically significant at a significance level of 0.05, however removing it does not reduce the AIC and it causes the Shapiro-Wilks normality test to reject normality. Therefore, Interaction_Score was kept in the final model.
 
 ```{r}
 # Residuals vs Fitted
@@ -607,8 +621,6 @@ Looks good, does not seem to have patterns or fan out or cluster too much. Some 
 
 Checking the outliers revealed that - for entry 45, the student had a higher perceived Competence score (82) than usual based on their fairly low Speaking Score (10) and Class Level (1) - For entry 16, the student had a lower perceived Competence score (29) than usual based on their fairly low Speaking Score (22) and Class Level (1) - For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
 
-# testing Competence Score for normality
-
 ```{r}
 # QQ Plot
 plot(competence_model_reduced, which = 2)
@@ -618,27 +630,29 @@ plot(competence_model_reduced, which = 2)
 shapiro.test(resid(competence_model_reduced))
 ```
 
+The Shapiro-Wilk test tests the null hypothesis that a sample comes from a normally distributed population.
+
 ```{r}
-stepAIC(intention_model, method = "backward")
+# Once again we can check for multicollinearity
+vif(competence_model_reduced)
+```
+
+## Intention Model
+
+```{r}
+intention_model_reduced <- step(intention_model, method = "backward")
+summary(intention_model_reduced)
 ```
 
 ```{r}
 # After model checking
 intention_model_reduced <- lm(Intention_Score ~
-                            Class_Level + 
-                            Host_Family + 
-                            Phone_Language + 
-                            Interaction_Score +   
-                            Speak_Hours_Score + 
-                            Use_French_Score,
-                       data = french_data)
+                                Class_Level + 
+                                Phone_Language + 
+                                Interaction_Score,
+                              data = french_data)
 
 summary(intention_model_reduced)
-```
-
-```{r}
-# Intention Score is closer to a normal or at least symmetric distribution
-plot(density(french_data$Intention_Score))
 ```
 
 ```{r}
@@ -651,8 +665,6 @@ once again, we should check the noted outliers
 -   for entry 24, the student had a higher Intention score (18) than usual based on their other entries in the model (class level 1, did not live with a french speaking family, did not have french as a phone language, above average interaction score etc)
 -   For entry 3, the student had a lower Intention score (6) than usual based on their other entries in the model (class level 0, did not live with a french speaking family, did not french as a phone language, above average interaction score etc )
 -   For entry 47, the student had a lower Intention score (14) than usual based on their other entries in the model (class level 4, lived with a french speaking family, had french as a phone language, above average interaction score etc)
-
-# checking Intention Score for normality
 
 ```{r}
 # QQ Plot
@@ -668,3 +680,8 @@ shapiro.test(resid(intention_model_reduced))
 pval \> 0.05, we can assume normality
 
 Let's look at plots of Interaction_Score, Speaking_Score, Speak_Hours_Score, Use_French_Score, and French_Hours_Score vs Competence_Score and Intention_Score
+
+```{r}
+# Once again we can check for multicollinearity
+vif(intention_model_reduced)
+```
