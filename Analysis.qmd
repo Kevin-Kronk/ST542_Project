@@ -603,7 +603,7 @@ Similar to above, none of the VIFs were above 5, therefore the model fit is like
 
 ## Feature Selection using BIC
 
-BIC is the Bayesian Information Criterion which can be used to select which model is fitting the data better based on which has the lowest BIC. It has a stronger penalty for models with more parameters. The equation is BIC = -2\*ln(Likelihood) + k\*ln(n), where k is the number of parameters in the model and n is the number of observations in the dataset. We decided to use BIC because we wanted to obtain a more parsimonious model. The feature selection method uses a backward elimination approach which removes one variable at a time and chooses the model that reduced the BIC the most.
+BIC is the Bayesian Information Criterion which can be used to select which model is fitting the data better based on which has the lowest BIC. It has a stronger penalty for models with more parameters. The equation is BIC = -2\*ln(Likelihood) + k\*ln(n), where k is the number of parameters in the model and n is the number of observations in the dataset. We decided to use BIC because we wanted to obtain a more parsimonious model. The feature selection method uses a backward elimination approach which removes one variable at a time and chooses the model that reduced the BIC the most. Backward elimination is the default method for performing feature selection in this way. Using forward or both as the method for selection provided the same results for both models.
 
 ## Competence Model
 
