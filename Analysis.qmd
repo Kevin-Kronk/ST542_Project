@@ -637,8 +637,6 @@ plot(competence_model_reduced, which = 1)
 
 Generally the residuals are spread out evenly across the fitted values, showing that there is roughly equal variance of the residuals. However, the three outliers identified by the plot are observations 16, 19, and 49.
 
-Checking the outliers revealed that - for entry 45, the student had a higher perceived Competence score (82) than usual based on their fairly low Speaking Score (10) and Class Level (1) - For entry 16, the student had a lower perceived Competence score (29) than usual based on their fairly low Speaking Score (22) and Class Level (1) - For entry 19, the student had a lower perceived Competence score (37) than usual based on their fairly low Speaking Score (18) and Class Level (2)
-
 ```{r}
 # QQ Plot
 plot(competence_model_reduced, which = 2)
@@ -659,6 +657,28 @@ vif(competence_model_reduced)
 
 All of the VIFs are very low which indicates that there is very little multicollinearity.
 
+Looking at the outliers from the plots above, observations 16 and 19 have large negative residuals and 49 has a large positive one. A residual is the actual value - the predicted one. So a negative residual means the model overestimated, and a positive means it underestimated.
+
+```{r}
+french_data |>
+  mutate(Observation = seq(1:nrow(french_data))) |>
+  select(Class_Level, Interaction_Score, Speaking_Score, 
+         Competence_Score, Observation) |>
+  arrange(Competence_Score)
+```
+
+As can be seen from the data, observations 16 and 19 had relatively low Competence_Scores given their Class_Level, Interaction_Score, and Speaking_Score. On the other hand observation 49 has a surprisingly high Competence_Score given it's relatively low Class_Level, Interaction_Score, and Speaking_Score.
+
+```{r}
+cooksdc <- cooks.distance(competence_model_reduced)
+plot(cooksdc, xlab = "Observation Number", ylab = "Cook's Distance")
+abline(h = 4/nrow(french_data), col = "red", lty = 2)
+inflabc <- which(cooksdc > 4/nrow(french_data))
+text(inflabc, cooksdc[inflabc], labels = inflabc, pos=2)
+```
+
+Looking at Cook's Distance we see that 32 and 49 are both influential values. Observation 49 was discussed above, but as can be seen observation 32 is the value with the lowest Competence_Score as well as the Speaking_Score being 0.
+
 ## Intention Model
 
 ```{r}
@@ -677,12 +697,6 @@ plot(intention_model_reduced, which = 1)
 ```
 
 The residuals appear to be roughly evenly spaced across the fitted values, indicating there is equal variance of the residuals. The three outliers identified by the plot are observations 3, 22, and 35.
-
-once again, we should check the noted outliers
-
--   for entry 24, the student had a higher Intention score (18) than usual based on their other entries in the model (class level 1, did not live with a french speaking family, did not have french as a phone language, above average interaction score etc)
--   For entry 3, the student had a lower Intention score (6) than usual based on their other entries in the model (class level 0, did not live with a french speaking family, did not french as a phone language, above average interaction score etc )
--   For entry 47, the student had a lower Intention score (14) than usual based on their other entries in the model (class level 4, lived with a french speaking family, had french as a phone language, above average interaction score etc)
 
 ```{r}
 # QQ Plot
@@ -703,3 +717,25 @@ vif(intention_model_reduced)
 ```
 
 All of the VIFs are very low which indicates that there is very little multicollinearity.
+
+Looking at the outliers from the plots above, observations 3 and 35 have large negative residuals and 22 has a large positive one. A residual is the actual value - the predicted one. So a negative residual means the model overestimated, and a positive means it underestimated.
+
+```{r}
+french_data |>
+  mutate(Observation = seq(1:nrow(french_data))) |>
+  select(Class_Level, Phone_Language, Interaction_Score, 
+         Intention_Score, Observation) |>
+  arrange(Intention_Score)
+```
+
+While it's somewhat hard to see it appears that the Intention_Score for observation 3 and 35 were lower than the model expected given their Class_Level, Phone_Language, and Interaction_Score combination. With observation 22 it is easier to see that it has a higher Intention_Score than the model expected given a Class_Level of 1, as well as the Phone_Language and Interaction_Score variables.
+
+```{r}
+cooksdi <- cooks.distance(intention_model_reduced)
+plot(cooksdi, xlab = "Observation Number", ylab = "Cook's Distance")
+abline(h = 4/nrow(french_data), col = "red", lty = 2)
+inflabi <- which(cooksdi > 4/nrow(french_data))
+text(inflabi, cooksdi[inflabi], labels = inflabi, pos=2)
+```
+
+Observation 3 is an influential point and it was described above.
