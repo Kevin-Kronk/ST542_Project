@@ -277,7 +277,8 @@ The boxplot makes it more clear that the reason for the higher mean compared to 
 ```{r}
 ggplot(french_data, aes(Screen_Time, Competence_Score)) +
   geom_point(na.rm=TRUE) +
-  geom_smooth(method = 'lm', formula = 'y ~ x', na.rm=TRUE)
+  geom_smooth(method = 'lm', formula = 'y ~ x', na.rm=TRUE) +
+  labs(x = "Avg Weekly Screen Time (Min)", y = "Competence Score")
 ```
 
 A perfectly flat model is possible in the 95% confidence bands, which indicates there may be no linear relationship between Screen_Time and Competence_Score.
@@ -294,7 +295,8 @@ Similar results as those above - no clear linear trend.
 ```{r}
 ggplot(french_data, aes(Screen_Time, Intention_Score)) +
   geom_point(na.rm=TRUE) + 
-  geom_smooth(method = "lm", formula = 'y ~ x', na.rm=TRUE)
+  geom_smooth(method = "lm", formula = 'y ~ x', na.rm=TRUE)  +
+  labs(x = "Avg Weekly Screen Time (Min)", y = "Intention Score")
 ```
 
 Once again, a perfectly flat line is possible in the 95% confidence bands, which indicates that there may not be a linear relationship between Screen_Time and Intention_Score.
@@ -315,8 +317,11 @@ The Interaction_Score appears to follow the normal distribution quite well given
 
 ```{r}
 ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
-  geom_point() +
-  geom_smooth(method = 'lm', formula = 'y ~ x')
+  geom_point(aes(color = factor(Class_Level),
+                 shape = factor(Class_Level))) +
+  geom_smooth(method = 'lm', formula = 'y ~ x', color = "black") +
+  labs(x = "Interaction Score", y = "Competence Score", color = "Class Level",
+       shape = "Class Level")
 ```
 
 There appears to be a slight positive linear relationship between Interaction_Score and Competence_Score, however a perfectly flat line may be possible in the 95% confidence bands, which would indicate no relationship.
@@ -326,7 +331,7 @@ ggplot(french_data, aes(x = Interaction_Score, y = Competence_Score,
                         color = factor(Class_Level), 
                         shape = factor(Class_Level))) + 
   geom_point() + 
-  labs(x = "Speaking Score", y = "Competence Score", 
+  labs(x = "Interaction Score", y = "Competence Score", 
        color = "Class Level", shape = "Class Level")
 ```
 
@@ -334,8 +339,11 @@ This graph does not show a clear linear trend here
 
 ```{r}
 ggplot(french_data, aes(Interaction_Score, Intention_Score)) +
-  geom_point() +
-  geom_smooth(method = 'lm', formula = 'y ~ x')
+  geom_point(aes(color = factor(Class_Level),
+                 shape = factor(Class_Level))) +
+  geom_smooth(method = 'lm', formula = 'y ~ x', color = "black") +
+  labs(x = "Interaction Score", y = "Intention Score", color = "Class Level",
+       shape = "Class Level")
 ```
 
 This plot indicates that there is a positive linear relationship between Interaction_Score and Intention_Score.
@@ -344,7 +352,9 @@ This plot indicates that there is a positive linear relationship between Interac
 ggplot(french_data, aes(x = Interaction_Score, y = Intention_Score, 
                         color = factor(Class_Level), 
                         shape = factor(Class_Level))) + 
-  geom_point()
+  geom_point() + 
+  labs(x = "Interaction Score", y = "Intention Score", 
+       color = "Class Level", shape = "Class Level")
 ```
 
 Similar here, no obvious linear trend
@@ -363,16 +373,22 @@ Given the amount of data in the sample, Speaking_Score is roughly following a no
 
 ```{r}
 ggplot(french_data, aes(Speaking_Score, Competence_Score)) +
-  geom_point() +
-  geom_smooth(method = 'lm', formula = 'y ~ x')
+  geom_point(aes(color = factor(Class_Level),
+                 shape = factor(Class_Level))) +
+  geom_smooth(method = 'lm', formula = 'y ~ x', color = "black") +
+  labs(x = "Speaking Score", y = "Competence Score", color = "Class Level",
+       shape = "Class Level")
 ```
 
 There appears to be a positive linear relationship between Speaking_Score and Competence_Score.
 
 ```{r}
 ggplot(french_data, aes(Speaking_Score, Intention_Score)) +
-  geom_point() +
-  geom_smooth(method = 'lm', formula = 'y ~ x')
+  geom_point(aes(color = factor(Class_Level),
+                 shape = factor(Class_Level))) +
+  geom_smooth(method = 'lm', formula = 'y ~ x', color = "black") +
+  labs(x = "Speaking Score", y = "Intention Score", color = "Class Level",
+       shape = "Class Level")
 ```
 
 There also appears to be a positive linear relationship between Speaking_Score and Intention_Score, but it's possible that a flat line is within the 95% confidence bands which would indicate no relationship.
