@@ -7,8 +7,8 @@ editor: visual
 ```{r}
 # Load libraries
 library(MASS)
-library(tidyverse)
 library(car)
+library(tidyverse)
 ```
 
 # Load Data
@@ -183,8 +183,6 @@ ggplot(french_data, aes(x = Host_Family, y = Competence_Score,
 
 This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
 
-(This is a weird plot to me because you're looking at the total competence across two groups, but the groups have different numbers of students in them. I guess it's interesting that students in class level 4 are only living with a host family.)
-
 ```{r}
 ggplot(french_data, aes(Host_Family, Competence_Score, color = Host_Family)) +
   geom_boxplot() +
@@ -257,6 +255,7 @@ The mean intention score for the French keyboard group is much higher than the g
 ### Screen Time
 
 ```{r}
+# Black line is Screen Time, red line is the Normal dist based off Screen Time
 ggplot(french_data, aes(Screen_Time)) +
   geom_density(na.rm = TRUE) + 
   stat_function(fun = dnorm, 
@@ -306,6 +305,8 @@ Due to the missing values, bimodal nature of the distribution, along with the ou
 ### Interaction Score
 
 ```{r}
+# Black line is Interaction Score
+# Red line is the Normal dist based off Interaction Score
 ggplot(french_data, aes(Interaction_Score)) +
   geom_density() + 
   stat_function(fun = dnorm, 
@@ -327,17 +328,6 @@ ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
 There appears to be a slight positive linear relationship between Interaction_Score and Competence_Score, however a perfectly flat line may be possible in the 95% confidence bands, which would indicate no relationship.
 
 ```{r}
-ggplot(french_data, aes(x = Interaction_Score, y = Competence_Score, 
-                        color = factor(Class_Level), 
-                        shape = factor(Class_Level))) + 
-  geom_point() + 
-  labs(x = "Interaction Score", y = "Competence Score", 
-       color = "Class Level", shape = "Class Level")
-```
-
-This graph does not show a clear linear trend here
-
-```{r}
 ggplot(french_data, aes(Interaction_Score, Intention_Score)) +
   geom_point(aes(color = factor(Class_Level),
                  shape = factor(Class_Level))) +
@@ -348,20 +338,11 @@ ggplot(french_data, aes(Interaction_Score, Intention_Score)) +
 
 This plot indicates that there is a positive linear relationship between Interaction_Score and Intention_Score.
 
-```{r}
-ggplot(french_data, aes(x = Interaction_Score, y = Intention_Score, 
-                        color = factor(Class_Level), 
-                        shape = factor(Class_Level))) + 
-  geom_point() + 
-  labs(x = "Interaction Score", y = "Intention Score", 
-       color = "Class Level", shape = "Class Level")
-```
-
-Similar here, no obvious linear trend
-
 ### Speaking Score
 
 ```{r}
+# Black line is Speaking Score
+# Red line is the Normal dist based off Speaking Score
 ggplot(french_data, aes(Speaking_Score)) +
   geom_density() + 
   stat_function(fun = dnorm, 
@@ -391,11 +372,13 @@ ggplot(french_data, aes(Speaking_Score, Intention_Score)) +
        shape = "Class Level")
 ```
 
-There also appears to be a positive linear relationship between Speaking_Score and Intention_Score, but it's possible that a flat line is within the 95% confidence bands which would indicate no relationship.
+There also appears to be a slight positive linear relationship between Speaking_Score and Intention_Score.
 
 ### Speak Hour Score
 
 ```{r}
+# Black line is Speak Hours Score
+# Red line is the Normal dist based off Speak Hours Score
 ggplot(french_data, aes(Speak_Hours_Score)) +
   geom_density() + 
   stat_function(fun = dnorm, 
@@ -424,6 +407,8 @@ Similarly, there is a positive linear relationship between Speak_Hours_Score and
 ### Use French Score
 
 ```{r}
+# Black line is Use French Score
+# Red line is the Normal dist based off Use French Score
 ggplot(french_data, aes(Use_French_Score)) +
   geom_density() + 
   stat_function(fun = dnorm, 
@@ -439,7 +424,7 @@ ggplot(french_data, aes(Use_French_Score, Competence_Score)) +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
-There is a positive linear relationship between Use_French_Score and Competence_Score, however a flat line may be possible in the 95% confidence bands, which would indicate there may not be a linear relationship.
+There is a slight positive linear relationship between Use_French_Score and Competence_Score.
 
 ```{r}
 ggplot(french_data, aes(Use_French_Score, Intention_Score)) +
@@ -452,6 +437,8 @@ A flat line between Use_French_Score and Intention_Score is possible in the 95% 
 ### French Hours Score
 
 ```{r}
+# Black line is French Hours Score
+# Red line is the Normal dist based off French Hours Score
 ggplot(french_data, aes(French_Hours_Score)) +
   geom_density() + 
   stat_function(fun = dnorm, 
@@ -480,6 +467,8 @@ A flat line is also possible in the 95% confidence bands here, therefore there m
 ### Competence and Intention Score
 
 ```{r}
+# Black line is Competence Score
+# Red line is the Normal dist based off Competence Score
 ggplot(french_data, aes(Competence_Score)) +
   geom_density() +
   stat_function(fun = dnorm, 
@@ -490,6 +479,8 @@ ggplot(french_data, aes(Competence_Score)) +
 Given the sample size, the Competence_Score roughly follows the normal distribution. Additionally, looking at the summary statistics, the mean and median were very close.
 
 ```{r}
+# Black line is Intention Score
+# Red line is the Normal dist based off Intention Score
 ggplot(french_data, aes(Intention_Score)) +
   geom_density() +
   stat_function(fun = dnorm, 
@@ -512,7 +503,7 @@ There is a very clear positive linear relationship between Competence_Score and 
 ```{r}
 # Look at the correlations with Screen_Time separately since it removes NA values
 ST_corr <- french_data_corr |>
-  select(Year_2024, Year_2025, Class_Level, Host_Family, Phone_Language,
+  dplyr::select(Year_2024, Year_2025, Class_Level, Host_Family, Phone_Language,
          Phone_Keyboard, Screen_Time, Interaction_Score, Speaking_Score,
          Speak_Hours_Score, Use_French_Score, French_Hours_Score,
          Competence_Score, Intention_Score) |>
@@ -526,7 +517,7 @@ As can be seen, the Screen_Time variable has low correlations with all of the ot
 ```{r}
 # Correlations for the rest of the data
 french_data_corr |>
-  select(Year_2024, Year_2025, Class_Level, Host_Family, Phone_Language,
+  dplyr::select(Year_2024, Year_2025, Class_Level, Host_Family, Phone_Language,
          Phone_Keyboard, Interaction_Score, Speaking_Score,
          Speak_Hours_Score, Use_French_Score, French_Hours_Score,
          Competence_Score, Intention_Score) |>
@@ -578,8 +569,6 @@ ggplot(french_data, aes(Use_French_Score, French_Hours_Score)) +
 # Linear Models
 
 The Screen_Time variable had several issues with data quality, and along with the various details found above, our client determined that it had too many issues. Therefore, the variable was not included in the model.
-
-Might need to standardize the variables first, but for now it's probably fine
 
 ```{r}
 competence_model <- lm(Competence_Score ~ Year_2024 + Year_2025 + Class_Level +
@@ -673,12 +662,12 @@ vif(competence_model_reduced)
 
 All of the VIFs are very low which indicates that there is very little multicollinearity.
 
-Looking at the outliers from the plots above, observations 16 and 19 have large negative residuals and 49 has a large positive one. A residual is the actual value - the predicted one. So a negative residual means the model overestimated, and a positive means it underestimated.
+Looking at the outliers from the plots above, observations 16 and 19 have large negative residuals and 49 has a large positive one. A residual is the actual value minus the predicted one. So a negative residual means the model overestimated, and a positive means it underestimated.
 
 ```{r}
 french_data |>
   mutate(Observation = seq(1:nrow(french_data))) |>
-  select(Class_Level, Interaction_Score, Speaking_Score, 
+  dplyr::select(Class_Level, Interaction_Score, Speaking_Score, 
          Competence_Score, Observation) |>
   arrange(Competence_Score)
 ```
@@ -739,7 +728,7 @@ Looking at the outliers from the plots above, observations 3 and 35 have large n
 ```{r}
 french_data |>
   mutate(Observation = seq(1:nrow(french_data))) |>
-  select(Class_Level, Phone_Language, Interaction_Score, 
+  dplyr::select(Class_Level, Phone_Language, Interaction_Score, 
          Intention_Score, Observation) |>
   arrange(Intention_Score)
 ```
