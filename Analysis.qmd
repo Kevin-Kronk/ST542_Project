@@ -88,6 +88,11 @@ french_data <- french_data |>
 
 ## Plots
 
+-   Color coded by response
+    -   Default is counts
+    -   Greens is by Competence Score
+    -   Blues is by Intention Score
+
 ### Year
 
 ```{r}
@@ -100,6 +105,8 @@ french_data |>
   summarize(count = n())
 ```
 
+Year counts
+
 ```{r}
 ggplot(french_data, aes(Year, fill = Year)) +
   geom_bar()
@@ -107,19 +114,23 @@ ggplot(french_data, aes(Year, fill = Year)) +
 
 There's a difference in the number of students per year, but no clear pattern. 2023 has the most, then 2025, and finally 2024.
 
-```{r}
-ggplot(french_data, aes(Year, Competence_Score, color = Year)) +
-  geom_boxplot()
-```
-
-For Year compared to Competence_Score, there doesn't seem to be any major difference in the overall distributions of the three years. The year 2025 has a higher average Competence Score than 2023 or 2024.
+Competence Score by Year
 
 ```{r}
-ggplot(french_data, aes(Year, Intention_Score, color = Year)) +
-  geom_boxplot()
+ggplot(french_data, aes(Year, Competence_Score, fill = Year)) +
+  geom_boxplot() + scale_fill_brewer(palette = "Greens")
 ```
 
-For Year vs Intention_Score, 2024 has a smaller IQR and range than 2023 and 2025, as well as a slightly higher average Intention_Score. Both 2023 and 2025 have very similar distributions.
+For Year vs Competence_Score, there doesn't seem to be any major difference in the overall distributions of the three years. The year 2025 has a higher median Competence Score than 2023 or 2024. 2023 had the widest spread.
+
+Intention Score by Year
+
+```{r}
+ggplot(french_data, aes(Year, Intention_Score, fill = Year)) +
+  geom_boxplot() +  scale_fill_brewer(palette = "Blues")
+```
+
+For Year vs Intention_Score, 2024 has a smaller IQR and range than 2023 and 2025, as well as a slightly higher median Intention_Score. Both 2023 and 2025 have very similar spreads.
 
 ### Class Level
 
@@ -130,46 +141,61 @@ french_data |>
             avgintscore = mean(Intention_Score), .groups = "drop")
 ```
 
-Seems as though by class level, with 4 being the most difficult, competence scores do increase as one would expect.
+It seems as though by class level, with 4 being the most difficult, competence scores do increase, as one would expect. We do see less of a pattern for intention score.
+
+Class Level counts
 
 ```{r}
 ggplot(french_data, aes(Class_Level, fill = factor(Class_Level))) +
-  geom_bar()
+  geom_bar() + labs(x = "Class Level (0 = Lowest, 4 = Highest)", fill="Class Level")
 ```
 
-The Class_Level is somewhat right skewed with most students in the lowest levels and very few at the highest level.
+The Class_Level is somewhat right skewed with most students in the lowest 2 levels and very few at the highest level.
+
+Competence Score by Class Level
 
 ```{r}
 ggplot(french_data, aes(Class_Level, Competence_Score, 
-                        color = factor(Class_Level))) +
-  geom_boxplot()
+                        fill = factor(Class_Level))) +
+  geom_boxplot() + scale_fill_brewer(palette = "Greens") + 
+  labs(x = "Class Level (0 = Lowest, 4 = Highest)", fill="Class Level")
 ```
 
-There is a very clear correlation between increasing Class_Level and increasing perceived Competence_Score.
+This boxplot shows a clear increase in Competence Score as Class Level increases.
+
+Intention Score by Class Level
 
 ```{r}
 ggplot(french_data, aes(Class_Level, Intention_Score, 
-                        color = factor(Class_Level))) +
-  geom_boxplot()
+                        fill = factor(Class_Level))) +
+  geom_boxplot() + scale_fill_brewer(palette = "Blues") + 
+  labs(x = "Class Level (0 = Lowest, 4 = Highest)", fill="Class Level")
 ```
 
-Similarly there is a fairly clear correlation between increasing Class_Level and increasing Intention_Score on average.
+There is less of a clear increase in Intention Score as Class Level increases, we saw in the table before. The individual box plots are also much wider, indicating more variation within the class level categories as well.
 
 ### Host Family
 
 ```{r}
 french_data |> 
   group_by(Host_Family) |> 
-  summarize(n = n(), comp = sum(Competence_Score)) |> 
-  mutate(prop_count = n/sum(n), prop_comp = comp/sum(comp))
+  summarize(n = n()) |> 
+  mutate(prop_count = n/sum(n))
 ```
 
-Top row is Student housing, and this row seems to be the majority of student living situations.
+Top row (Host_Family = 0) is Student housing, and this row seems to be the majority of student living situations.
+
+Host Family counts
 
 ```{r}
-ggplot(french_data, aes(Host_Family, fill = Host_Family)) +
-  geom_bar()
+#| warning: false
+ggplot(french_data, aes(Host_Family, group = Host_Family, fill = Host_Family)) +
+  geom_bar() + labs(x = "Host Family (0 = Student Housing, 1 = Host Family)", fill = "Host Family")
 ```
+
+This graph shows that more students lived in Student housing, visualizing what we saw before in the table
+
+Competence Score by Host Family
 
 ```{r}
 ggplot(french_data, aes(x = Host_Family, y = Competence_Score, 
@@ -184,78 +210,108 @@ ggplot(french_data, aes(x = Host_Family, y = Competence_Score,
 This bar plot shows that those that lived with a Host Family had a higher overall Competence score on average
 
 ```{r}
-ggplot(french_data, aes(Host_Family, Competence_Score, color = Host_Family)) +
+ggplot(french_data, aes(Host_Family, Competence_Score, fill = Host_Family)) +
   geom_boxplot() +
-    geom_jitter(width=0.2)
+    geom_jitter(width=0.2) + 
+  scale_fill_brewer(palette = "Greens") + 
+  labs(x = "Host Family (0 = Student Housing, 1 = Host Family)", fill = "Host Family")
 ```
 
-On average the students who lived with a host family had a slightly higher competence score.
+Overall the students who lived with a host family had a slightly higher competence score than those who lived in student housing.
+
+Intention Score by Host Family
 
 ```{r}
-ggplot(french_data, aes(Host_Family, Intention_Score, color = Host_Family)) +
-  geom_boxplot()
+ggplot(french_data, aes(Host_Family, Intention_Score, fill = Host_Family)) +
+  geom_boxplot() + geom_jitter(width=0.2) + 
+  scale_fill_brewer(palette = "Blues") + 
+  labs(x = "Host Family (0 = Student Housing, 1 = Host Family)", fill = "Host Family")
 ```
 
-Similarly, on average the students who lived with a host family had a slightly higher intention score.
+Similarly, overall the students who lived with a host family had a slightly higher intention score. We also see slightly more spread in the Host Family category, and more skew towards higher intention scores in the student housing category
 
 ### Phone Language
 
+Phone Language counts
+
 ```{r}
 ggplot(french_data, aes(Phone_Language, fill = Phone_Language)) +
-  geom_bar()
+  geom_bar() + 
+  labs(x = "Phone Language (0 = Did not have French as a Phone Language)", 
+       fill = "Phone Language")
 ```
 
 Slightly more students did not have French as a language on their phone.
 
+Competence score by Phone Language
+
 ```{r}
 ggplot(french_data, aes(Phone_Language, Competence_Score, 
-                        color = Phone_Language)) +
+                        fill = Phone_Language)) +
   geom_boxplot() +
-  geom_jitter(width = 0.2)
+  geom_jitter(width = 0.2) +  scale_fill_brewer(palette = "Greens") +
+  labs(x = "Phone Language (0 = Did not have French as a Phone Language)", 
+       fill = "Phone Language")
 ```
 
-The students who did have French as a language on their phone had a higher competence score on average.
+The students who did have French as a language on their phone had a higher median competence score and overall spread.
+
+Intention Score by Phone Language
 
 ```{r}
 ggplot(french_data, aes(Phone_Language, Intention_Score, 
-                        color = Phone_Language)) +
+                        fill = Phone_Language)) +
   geom_boxplot() +
-  geom_jitter(width = 0.2)
+  geom_jitter(width = 0.2) + scale_fill_brewer(palette = "Blues") +
+  labs(x = "Phone Language (0 = Did not have French as a Phone Language)", 
+       fill = "Phone Language")
 ```
 
-Similarly, the students who did have French as a language on their phone had a higher intention score on average.
+Similarly, the students who did have French as a language on their phone had a higher overall spread of intention score.
 
 ### Phone Keyboard
 
+Phone Keyboard counts
+
 ```{r}
 ggplot(french_data, aes(Phone_Keyboard, fill = Phone_Keyboard)) +
-  geom_bar()
+  geom_bar() + 
+  labs(x = "Phone Keyboard (0 = Did not have a French Keyboard on their phone)",
+       fill = "Phone Keyboard")
 ```
 
 There are far more students who have a French keyboard on their phone.
 
+Competence Score by Phone Keyboard
+
 ```{r}
 ggplot(french_data, aes(Phone_Keyboard, Competence_Score, 
-                        color = Phone_Keyboard)) +
-  geom_boxplot() +
-  geom_jitter(width = 0.2)
+                        fill = Phone_Keyboard)) +
+  geom_boxplot() + geom_jitter(width = 0.2) + scale_fill_brewer(palette = "Greens") +
+  labs(x = "Phone Keyboard (0 = Did not have a French Keyboard on their phone)",
+       fill = "Phone Keyboard")
 ```
 
-While the IQR and range are wider for the French keyboard group as you might expect from having more data, the mean competence score for both groups are about the same.
+While the IQR and range are wider for the French keyboard group as you might expect from having more data, the median competence score for both groups are relatively similar.
+
+Intention Score by Phone Keyboard
 
 ```{r}
 ggplot(french_data, aes(Phone_Keyboard, Intention_Score, 
-                        color = Phone_Keyboard)) +
+                        fill = Phone_Keyboard)) +
   geom_boxplot() +
-  geom_jitter(width = 0.2)
+  geom_jitter(width = 0.2) + scale_fill_brewer(palette = "Blues") +
+  labs(x = "Phone Keyboard (0 = Did not have a French Keyboard on their phone)",
+       fill = "Phone Keyboard")
 ```
 
-The mean intention score for the French keyboard group is much higher than the group that didn't use a French keyboard.
+The median intention score for the French keyboard group is much higher than the group that didn't use a French keyboard. Also, we see that for the group that did not use a French keyboard, the median is skewed towards the bottom, indicating lower scores.
 
 ### Screen Time
 
 ```{r}
-# Black line is Screen Time, red line is the Normal dist based off Screen Time
+# Black line is Screen Time, 
+# Red line is the Normal dist based off Screen Time
 ggplot(french_data, aes(Screen_Time)) +
   geom_density(na.rm = TRUE) + 
   stat_function(fun = dnorm, 
@@ -264,14 +320,16 @@ ggplot(french_data, aes(Screen_Time)) +
                 color = "red")
 ```
 
-It looks like Screen_Time may have a left skewed distribution with a higher mean than median. It's also possible that the distribution is bimodal which may indicate that students are answering the question in different ways.
+It looks like Screen_Time may have a skewed distribution with a higher mean than median. It's also possible that the distribution is bimodal which may indicate that students are answering the question in different ways.
 
 ```{r}
 ggplot(french_data, aes(x= Screen_Time)) + 
-  geom_boxplot(fill = "orchid", na.rm = TRUE)
+  geom_boxplot(na.rm = TRUE)
 ```
 
 The boxplot makes it more clear that the reason for the higher mean compared to the median may be due to a few outliers on the far right.
+
+Competence Score by Screen Time
 
 ```{r}
 ggplot(french_data, aes(Screen_Time, Competence_Score)) +
@@ -285,22 +343,25 @@ A perfectly flat model is possible in the 95% confidence bands, which indicates 
 ```{r}
 ggplot(french_data, aes(x = Screen_Time, y = Competence_Score, 
                         color = factor(Class_Level), 
-                        shape = factor(Class_Level) )) + 
-  geom_point(na.rm = TRUE)
+                        shape = factor(Class_Level))) +
+  geom_point(na.rm = TRUE) +
+  labs(x = "Avg Weekly Screen Time (Min)", y = "Competence Score", color = "Class Level", shape = "Class Level")
 ```
 
-Similar results as those above - no clear linear trend.
+Similar results as those above - no clear linear trend. We do see Class level groupings, with the majority of those on the graph being those from the lower class levels.
+
+Intention Score by Screen Time
 
 ```{r}
 ggplot(french_data, aes(Screen_Time, Intention_Score)) +
   geom_point(na.rm=TRUE) + 
   geom_smooth(method = "lm", formula = 'y ~ x', na.rm=TRUE)  +
-  labs(x = "Avg Weekly Screen Time (Min)", y = "Intention Score")
+  labs(x = "Avg Weekly Screen Time (Min)", y = "Intention Score", color = "Class Level", shape = "Class Level")
 ```
 
-Once again, a perfectly flat line is possible in the 95% confidence bands, which indicates that there may not be a linear relationship between Screen_Time and Intention_Score.
+Once again, a flat line is possible in the 95% confidence bands, which indicates that there may not be a linear relationship between Screen_Time and Intention_Score.
 
-Due to the missing values, bimodal nature of the distribution, along with the outliers and the potential for there being no linear relationship with Competence_Score and Intention_Score, it seems likely that Screen_Time will be removed from the model.
+Due to the missing values, bimodal nature of the distribution, along with the outliers and the potential for there being no linear relationship with Competence_Score and Intention_Score, Screen_Time will be removed from the model.
 
 ### Interaction Score
 
@@ -314,7 +375,9 @@ ggplot(french_data, aes(Interaction_Score)) +
                             sd = sd(french_data$Interaction_Score)),color = "red")
 ```
 
-The Interaction_Score appears to follow the normal distribution quite well given the amount of data in the sample.
+Interaction_Score appears to follow the normal distribution quite well given the amount of data in the sample.
+
+Competence Score by Interaction Score
 
 ```{r}
 ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
@@ -325,7 +388,9 @@ ggplot(french_data, aes(Interaction_Score, Competence_Score)) +
        shape = "Class Level")
 ```
 
-There appears to be a slight positive linear relationship between Interaction_Score and Competence_Score, however a perfectly flat line may be possible in the 95% confidence bands, which would indicate no relationship.
+There appears to be a slight positive linear relationship between Interaction_Score and Competence_Score, however a flat line may be possible in the 95% confidence bands, which would indicate no relationship. There are again visible class level groupings, with the lower class levels being more towards the bottom of the graph and the higher levels being more towards the top. Once again we see the class level groupings
+
+Intention Score by Interaction Score
 
 ```{r}
 ggplot(french_data, aes(Interaction_Score, Intention_Score)) +
@@ -352,6 +417,8 @@ ggplot(french_data, aes(Speaking_Score)) +
 
 Given the amount of data in the sample, Speaking_Score is roughly following a normal distribution, however it's possible that it deviates slightly. From the summary statistics above, the mean and median are very close to one another.
 
+Competence Score by Speaking Score
+
 ```{r}
 ggplot(french_data, aes(Speaking_Score, Competence_Score)) +
   geom_point(aes(color = factor(Class_Level),
@@ -362,6 +429,8 @@ ggplot(french_data, aes(Speaking_Score, Competence_Score)) +
 ```
 
 There appears to be a positive linear relationship between Speaking_Score and Competence_Score.
+
+Intention Score by Speaking Score
 
 ```{r}
 ggplot(french_data, aes(Speaking_Score, Intention_Score)) +
@@ -374,7 +443,7 @@ ggplot(french_data, aes(Speaking_Score, Intention_Score)) +
 
 There also appears to be a slight positive linear relationship between Speaking_Score and Intention_Score.
 
-### Speak Hour Score
+### Speak Hours Score
 
 ```{r}
 # Black line is Speak Hours Score
@@ -388,13 +457,17 @@ ggplot(french_data, aes(Speak_Hours_Score)) +
 
 The Speak_Hours_Score appears to be left skewed and from the summary statistics it has a much higher mean than median.
 
+Competence Score by Speak Hours Score
+
 ```{r}
 ggplot(french_data, aes(Speak_Hours_Score, Competence_Score)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = 'y ~ x')
 ```
 
-There is a positive linear relationship between Speak_Hours_Score and Competence_Score.
+There is a positive linear relationship between Speak_Hours_Score and Competence_Score. The points are also much more clustered towards the beginning of the graph.
+
+Intention Score by Speak Hours Score
 
 ```{r}
 ggplot(french_data, aes(Speak_Hours_Score, Intention_Score)) +
@@ -418,6 +491,8 @@ ggplot(french_data, aes(Use_French_Score)) +
 
 The density shows that Use_French_Score may be slightly left skewed, which is backed up by the summary statistics which show that the mean is higher than the median. However, given the relatively small sample size, it's possible this is just due to variance.
 
+Competence Score by Use French Score
+
 ```{r}
 ggplot(french_data, aes(Use_French_Score, Competence_Score)) +
   geom_point() +
@@ -425,6 +500,8 @@ ggplot(french_data, aes(Use_French_Score, Competence_Score)) +
 ```
 
 There is a slight positive linear relationship between Use_French_Score and Competence_Score.
+
+Intention Score by Use French Score
 
 ```{r}
 ggplot(french_data, aes(Use_French_Score, Intention_Score)) +
@@ -448,6 +525,8 @@ ggplot(french_data, aes(French_Hours_Score)) +
 
 The French_Hours_Score is left skewed which is also backed up by the summary statistics showing that it has a much higher mean than median.
 
+Competence Score by French Hours Score
+
 ```{r}
 ggplot(french_data, aes(French_Hours_Score, Competence_Score)) +
   geom_point() +
@@ -455,6 +534,8 @@ ggplot(french_data, aes(French_Hours_Score, Competence_Score)) +
 ```
 
 A flat line is possible in the 95% confidence bands, therefore there may not be a linear relationship between French_Hours_Score and Competence_Score.
+
+Intention Score by French Hours Score
 
 ```{r}
 ggplot(french_data, aes(French_Hours_Score, Intention_Score)) +
@@ -489,6 +570,8 @@ ggplot(french_data, aes(Intention_Score)) +
 ```
 
 Similarly, given the sample size, the Intention_Score also roughly follows a normal distribution. It's mean and median were also very close to one another.
+
+Intention Score by Competence Score
 
 ```{r}
 ggplot(french_data, aes(Competence_Score, Intention_Score)) +
@@ -743,4 +826,4 @@ inflabi <- which(cooksdi > 4/nrow(french_data))
 text(inflabi, cooksdi[inflabi], labels = inflabi, pos=2)
 ```
 
-Observation 3 is an influential point and it was described above.
+Observation 3 is an influential point and it was described above. However as discussed before, since they are valid data points, they were not removed from the model.
