@@ -58,8 +58,9 @@ french_post_survey
 # Subsetting columns we will use in our analysis
 french_data <- french_post_survey |>
   select("Timestamp", "Class_Level", "Living_Arrangement",
-         "Phone_Language", "Phone_Keyboard", "Screen_Time", "Interact1", "Interact2",
-         "Interact3", "Interact4", "Interact5", "Interact6", "Interact7", "Interact8",
+         "Phone_Language", "Phone_Keyboard", "Screen_Time", 
+         "Interact1", "Interact2", "Interact3", "Interact4", 
+         "Interact5", "Interact6", "Interact7", "Interact8",
          "Interact9", "Interact10", "Speaking1", "Speaking2", "Speaking3", 
          "Speaking4", "Speaking5", "Speak_Hours1", "Speak_Hours2", 
          "Speak_Hours3", "Speak_Hours4", "Speak_Hours5", 
@@ -148,7 +149,7 @@ french_data |>
 
 ### Class Level
 
-Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, to C1 - Advanced. Therefore these are ordinal categorical variables that should be converted to numberical from 0 to 4 in that order.
+Language levels go from A1 - beginner, A2 - Elementary, B1 - Lower Intermediate, B2 - Upper Intermediate, to C1 - Advanced. Therefore this is an ordinal categorical variable that should be converted to numerical from 0 to 4 in that order.
 
 ```{r}
 # Look at counts of each Class Level
@@ -296,7 +297,7 @@ convert_ordinal_interact <- function(col) {
 ```
 
 ```{r}
-# Conert the Interact variables
+# Convert the Interact variables
 french_data <- french_data |>
   mutate(across(all_of(ordinal_interact_columns), convert_ordinal_interact))
 
@@ -353,7 +354,7 @@ french_data |>
 ```
 
 ```{r}
-# Function to convert ordinal categorical Response variables to numberical
+# Function to convert ordinal categorical Response variables to numerical
 ordinal_dict <- c("Not sure" = 0,
                   "Somewhat sure" = 1,
                   "Moderately sure" = 2,
